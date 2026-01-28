@@ -216,13 +216,43 @@
     // --- 2. Profile & Search ---
     function openProfileModal() { document.getElementById('profile-modal').style.display = 'flex'; }
     
-    function saveProfile() {
-        const newBio = document.getElementById('edit-bio').value;
-        const newAva = document.getElementById('edit-avatar').value;
-        socket.emit('update-profile', { username: me.username, bio: newBio, avatar: newAva });
-        document.getElementById('profile-modal').style.display = 'none';
+        // নতুন ফাংশন: ছবি সিলেক্ট করলে প্রিভিউ দেখাবে এবং Base64 বানাবে
+    let newAvatarBase64 = "";
+
+    function previewMyDP(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        // সাইজ লিমিট (১ এমবি এর বেশি হলে আটকাবে)
+        if (file.size > 1024 * 1024) {
+            alert("Please select a smaller image (Max 1MB) to keep app fast!");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            document.getElementById('edit-preview').src = e.target.result;
+            newAvatarBase64 = e.target.result; // ডাটাবেসে পাঠানোর জন্য রেডি
+        };
+        reader.readAsDataURL(file);
     }
 
+    // আপডেট করা সেভ ফাংশন
+    function saveProfile() {
+        const newBio = document.getElementById('edit-bio').value;
+        // যদি নতুন ছবি দেয় তো ভালো, না দিলে আগেরটাই থাকবে
+        const avatarToSend = newAvatarBase64 || document.getElementById('my-dp').src;
+        
+        socket.emit('update-profile', { 
+            username: me.username, 
+            bio: newBio, 
+            avatar: avatarToSend 
+        });
+        
+        document.getElementById('profile-modal').style.display = 'none';
+        alert("Updating profile... Please wait.");
+    }
+    
     socket.on('profile-updated', (user) => {
         me = user;
         localStorage.setItem('ultima_user', JSON.stringify(user));
