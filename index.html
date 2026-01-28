@@ -69,6 +69,20 @@
         @media(min-width: 768px) {
             body { max-width: 450px; margin: 0 auto; border: 1px solid #334155; }
         }
+
+        /* অনলাইন ইন্ডিকেটর */
+.online-dot { width: 10px; height: 10px; background: #22c55e; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 8px #22c55e; }
+.offline-text { color: #94a3b8; font-size: 11px; }
+
+/* টিক মার্ক স্টাইল */
+.tick { font-size: 10px; margin-left: 5px; color: #94a3b8; }
+.tick.seen { color: #38bdf8; }
+
+/* ভয়েস মেসেজ প্লেয়ার */
+.voice-msg { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 20px; }
+.mic-active { color: #ef4444; animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
     </style>
 </head>
 <body>
@@ -358,6 +372,74 @@
             reader.readAsDataURL(file);
         }
 
+let mediaRecorder;
+let audioChunks = [];
+
+// ১. অনলাইন স্ট্যাটাস চেক
+socket.on('user-online-status', (users) => {
+    const statusText = document.getElementById('chat-status');
+    const chatTitle = document.getElementById('chat-name').innerText;
+    
+    if (users.includes(chatTitle)) {
+        statusText.innerHTML = `<span class="online-dot"></span> Online`;
+        document.getElementById('voice-btn').style.opacity = "1"; // অনলাইন থাকলে ভয়েস অন
+    } else {
+        statusText.innerHTML = `<span class="offline-text">Offline</span>`;
+        document.getElementById('voice-btn').style.opacity = "0.3"; // অফলাইন থাকলে ঘোলা
+    }
+});
+
+// ২. ভয়েস রেকর্ডিং (অনলাইন থাকলে কাজ করবে)
+async function toggleVoice() {
+    const chatTitle = document.getElementById('chat-name').innerText;
+    // এখানে সার্ভার থেকে আসা অনলাইন লিস্ট চেক করতে হবে (Global variable users থেকে)
+    if (document.getElementById('chat-status').innerText.includes('Offline')) {
+        alert("User is offline! Voice messages only allowed when online.");
+        return;
+    }
+
+    if (!mediaRecorder || mediaRecorder.state === "inactive") {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.start();
+        document.getElementById('voice-btn').classList.add('mic-active');
+        
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = () => {
+                socket.emit('private-message', { roomID: currentRoom, sender: me.username, voice: reader.result });
+            };
+            audioChunks = [];
+        };
+    } else {
+        mediaRecorder.stop();
+        document.getElementById('voice-btn').classList.remove('mic-active');
+    }
+}
+
+// ৩. ডাবল টিক ডিসপ্লে
+function displayMessage(msg) {
+    const tickClass = msg.status === 'seen' ? 'fa-check-double seen' : 'fa-check';
+    const tickHtml = msg.sender === me.username ? `<i id="tick-${msg._id}" class="fas ${tickClass} tick"></i>` : '';
+    
+    // মেসেজ রেন্ডার করার সময় সিন চেক
+    if (msg.sender !== me.username && msg.status !== 'seen') {
+        socket.emit('message-seen', { msgId: msg._id, roomID: currentRoom });
+    }
+    
+    // ভয়েস মেসেজ হলে অডিও প্লেয়ার দেখাবে
+    let content = msg.text || "";
+    if (msg.voice) content = `<div class="voice-msg"><i class="fas fa-play"></i> Voice Message</div>`;
+    
+    // ... আপনার আগের মেসেজ রেন্ডারিং কোড এর সাথে tickHtml যোগ করুন
+}
+
+
+
+
         socket.on('receive-message', (msg) => {
             const div = document.createElement('div');
             div.className = `msg ${msg.sender === me.username ? 'msg-me' : 'msg-friend'}`;
@@ -388,6 +470,22 @@
             });
             document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
         });
+let mediaRecorder;
+let audioChunks = [];
+
+// ১. অনলাইন স্ট্যাটাস চেক
+socket.on('user-online-status', (users) => {
+    const statusText = document.getElementById('chat-status');
+    const chatTitle = document.getElementById('chat-name').innerText;
+    
+    if (users.includes(chatTitle)) {
+        statusText.innerHTML = `<span class="online-dot"></span> Online`;
+        document.getElementById('voice-btn').style.opacity = "1"; // অনলাইন থাকলে ভয়েস অন
+    } else {
+        statusText.innerHTML = `<span class="offline-text">Offline</span>`;
+        document.getElementById('voice-btn').style.opacity = "0.3"; // অফলাইন থাকলে ঘোলা
+    }
+});
     </script>
 </body>
 </html>
