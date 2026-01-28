@@ -3,499 +3,330 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pro Chat App</title>
+    <title>Ultima Chat</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --primary: #3b82f6;
-            --primary-dark: #2563eb;
-            --text-light: #f8fafc;
-            --text-gray: #94a3b8;
-            --my-msg-bg: #3b82f6;
-            --other-msg-bg: #334155;
-            --danger: #ef4444;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+        :root { --bg: #0f172a; --card: #1e293b; --primary: #6366f1; --text: #f8fafc; --gray: #94a3b8; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; justify-content: center; }
         
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-light);
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-        }
-
-        /* মোবাইল অ্যাপ কন্টেইনার */
-        #app-container {
-            width: 100%;
-            max-width: 480px; /* ডেস্কটপে মোবাইলের মতো দেখাবে */
-            background: var(--bg-color);
-            height: 100%;
-            position: relative;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* স্ক্রিন ট্রানজিশন */
-        .screen {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color);
-            display: flex;
-            flex-direction: column;
-            transform: translateX(100%);
-            transition: transform 0.3s ease-in-out;
-            z-index: 10;
-        }
+        #app { width: 100%; max-width: 480px; height: 100%; position: relative; background: var(--bg); display: flex; flex-direction: column; }
+        .screen { position: absolute; inset: 0; background: var(--bg); display: flex; flex-direction: column; transform: translateX(100%); transition: 0.3s; z-index: 10; }
         .screen.active { transform: translateX(0); z-index: 20; }
-        
-        /* 1. লগইন স্ক্রিন */
-        #login-screen {
-            justify-content: center;
-            align-items: center;
-            padding: 30px;
-            text-align: center;
-        }
-        .logo-area { margin-bottom: 40px; }
-        .logo-icon { font-size: 60px; color: var(--primary); margin-bottom: 10px; }
-        .app-title { font-size: 24px; font-weight: 600; letter-spacing: 1px; }
-        
-        .input-group { width: 100%; margin-bottom: 15px; position: relative; }
-        .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-gray); }
-        input {
-            width: 100%;
-            padding: 15px 15px 15px 45px;
-            background: var(--card-bg);
-            border: 1px solid #334155;
-            border-radius: 12px;
-            color: white;
-            font-size: 16px;
-            transition: 0.3s;
-        }
-        input:focus { border-color: var(--primary); }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: background 0.2s;
-        }
-        .btn:active { transform: scale(0.98); }
-        .link-text { margin-top: 20px; color: var(--text-gray); font-size: 14px; cursor: pointer; }
-        .link-text span { color: var(--primary); font-weight: 600; }
-
-        /* প্রোফাইল আপলোড */
-        .upload-wrapper { position: relative; width: 100px; height: 100px; margin: 0 auto 20px; }
-        .profile-preview { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); }
-        .camera-icon {
-            position: absolute; bottom: 0; right: 0;
-            background: var(--primary); padding: 8px;
-            border-radius: 50%; font-size: 14px; cursor: pointer;
-        }
-
-        /* 2. ড্যাশবোর্ড */
-        .header {
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid #334155;
-            z-index: 50;
-        }
-        .header h2 { font-size: 20px; font-weight: 600; }
-        .mini-profile { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
-
-        .search-bar { padding: 15px; }
-        .search-box {
-            display: flex; background: var(--card-bg);
-            border-radius: 10px; padding: 10px; align-items: center;
-        }
-        .search-box input { border: none; padding: 5px 10px; background: transparent; height: auto; }
-        .add-btn { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 8px; margin-left: 10px; font-size: 20px; cursor: pointer;}
-
-        .list-container { flex: 1; overflow-y: auto; padding: 0 15px; }
-        .section-label { color: var(--text-gray); font-size: 12px; margin: 15px 0 5px; text-transform: uppercase; font-weight: 600; }
-        
-        .user-item {
-            display: flex; align-items: center;
-            background: var(--card-bg);
-            padding: 12px; margin-bottom: 10px;
-            border-radius: 12px; cursor: pointer;
-            transition: 0.2s;
-        }
-        .user-item:active { transform: scale(0.98); background: #334155; }
-        .user-avatar { width: 50px; height: 50px; border-radius: 50%; margin-right: 15px; object-fit: cover; background: #333; }
-        .user-info { flex: 1; }
-        .user-name { font-weight: 600; font-size: 16px; margin-bottom: 3px; }
-        .user-status { font-size: 13px; color: var(--text-gray); }
-        .action-btn { padding: 6px 12px; border-radius: 6px; border: none; font-size: 12px; cursor: pointer; margin-left: 5px; }
-        .btn-accept { background: var(--primary); color: white; }
-
-        /* 3. চ্যাট স্ক্রিন */
-        .chat-header {
-            display: flex; align-items: center; padding: 15px;
-            background: var(--card-bg); border-bottom: 1px solid #334155;
-        }
-        .back-btn { background: none; border: none; color: white; font-size: 20px; margin-right: 15px; cursor: pointer; }
-        
-        .chat-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        
-        .message { max-width: 75%; padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.4; position: relative; word-wrap: break-word; }
-        .my-msg {
-            align-self: flex-end;
-            background: var(--my-msg-bg);
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-        .other-msg {
-            align-self: flex-start;
-            background: var(--other-msg-bg);
-            color: var(--text-light);
-            border-bottom-left-radius: 4px;
-        }
-        .msg-time { font-size: 10px; opacity: 0.7; display: block; text-align: right; margin-top: 5px; }
-
-        .chat-input-area {
-            padding: 15px; background: var(--card-bg);
-            display: flex; align-items: center; border-top: 1px solid #334155;
-        }
-        .chat-input { flex: 1; background: var(--bg-color); border: none; padding: 12px; border-radius: 20px; color: white; margin-right: 10px; }
-        .send-btn {
-            background: var(--primary); color: white; border: none;
-            width: 45px; height: 45px; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 18px; cursor: pointer;
-        }
-
         .hidden { display: none !important; }
+
+        /* Login */
+        .auth-box { padding: 40px; text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+        .dp-upload { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--primary); margin: 0 auto 20px; object-fit: cover; }
+        input { width: 100%; padding: 15px; background: var(--card); border: 1px solid #334155; border-radius: 12px; color: white; margin-bottom: 10px; }
+        .btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 10px; cursor: pointer;}
+        
+        /* Dashboard */
+        .nav-header { padding: 15px; background: rgba(30,41,59,0.9); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+        .nav-tabs { display: flex; justify-content: space-around; padding: 10px; background: var(--card); }
+        .tab { color: var(--gray); font-weight: 600; padding: 5px 10px; cursor: pointer; }
+        .tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
+
+        .content-area { flex: 1; overflow-y: auto; padding: 10px; }
+        
+        /* Search Result Item */
+        .user-card { display: flex; align-items: center; background: var(--card); padding: 12px; border-radius: 12px; margin-bottom: 10px; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; margin-right: 15px; object-fit: cover; }
+        .info { flex: 1; }
+        .name { font-weight: 600; font-size: 16px; }
+        .action-btn { background: var(--primary); color: white; padding: 8px 16px; border-radius: 8px; border: none; font-size: 12px; }
+
+        /* Chat Screen */
+        .chat-head { padding: 15px; background: var(--card); display: flex; align-items: center; border-bottom: 1px solid #334155; }
+        .messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 75%; padding: 10px 14px; border-radius: 18px; font-size: 14px; word-wrap: break-word; }
+        .my-msg { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 4px; }
+        .other-msg { align-self: flex-start; background: var(--card); border-bottom-left-radius: 4px; }
+        .media-msg { max-width: 100%; border-radius: 10px; margin-top: 5px; }
+        
+        .chat-input { padding: 10px; background: var(--card); display: flex; align-items: center; gap: 10px; border-top: 1px solid #334155; }
+        .icon-btn { color: var(--gray); font-size: 20px; background: none; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div id="app-container">
-    
+
+<div id="app">
     <div id="login-screen" class="screen active">
-        <div class="logo-area">
-            <i class="fa-solid fa-comments logo-icon"></i>
-            <h1 class="app-title">Secret Chat</h1>
-            <p style="color:var(--text-gray); font-size:14px;">Secure & Private Messaging</p>
+        <div class="auth-box">
+            <h1>Welcome</h1>
+            <img id="preview-dp" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="dp-upload" onclick="document.getElementById('dp-input').click()">
+            <input type="file" id="dp-input" hidden accept="image/*">
+            <p style="color:var(--gray); margin-bottom:20px; font-size:12px;">Tap image to upload DP</p>
+            
+            <input id="username" placeholder="Username">
+            <input id="password" type="password" placeholder="Password">
+            <button class="btn" onclick="auth('login')">Login</button>
+            <button class="btn" onclick="auth('register')" style="background:var(--card); margin-top:10px;">Create Account</button>
         </div>
-
-        <div id="avatar-section" class="hidden">
-            <div class="upload-wrapper" onclick="document.getElementById('file-input').click()">
-                <img id="preview-dp" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="profile-preview">
-                <div class="camera-icon"><i class="fa-solid fa-camera"></i></div>
-            </div>
-            <input type="file" id="file-input" accept="image/*" hidden>
-        </div>
-
-        <div class="input-group">
-            <i class="fa-solid fa-user"></i>
-            <input type="text" id="username" placeholder="Username">
-        </div>
-        <div class="input-group">
-            <i class="fa-solid fa-lock"></i>
-            <input type="password" id="password" placeholder="Password">
-        </div>
-
-        <button class="btn" id="auth-btn" onclick="handleAuth()">Login</button>
-        
-        <p class="link-text" onclick="toggleAuthMode()">
-            <span id="toggle-text">Don't have an account? Sign Up</span>
-        </p>
     </div>
 
     <div id="dashboard-screen" class="screen">
-        <div class="header">
-            <h2>Chats</h2>
-            <img id="my-nav-dp" src="" class="mini-profile">
+        <div class="nav-header">
+            <h3>Chats</h3>
+            <img id="my-nav-dp" src="" class="avatar" style="width:35px; height:35px; border:2px solid var(--primary);">
+        </div>
+        
+        <div class="nav-tabs">
+            <div class="tab active" onclick="switchTab('chats')">Chats</div>
+            <div class="tab" onclick="switchTab('status')">Status</div>
+            <div class="tab" onclick="switchTab('search')">Search</div>
         </div>
 
-        <div class="search-bar">
-            <div class="search-box">
-                <i class="fa-solid fa-search" style="color:var(--text-gray)"></i>
-                <input type="text" id="search-user" placeholder="Search username...">
-                <button class="add-btn" onclick="sendRequest()"><i class="fa-solid fa-user-plus"></i></button>
-            </div>
-        </div>
-
-        <div class="list-container">
-            <div id="request-section" class="hidden">
-                <div class="section-label">Requests</div>
+        <div id="tab-chats" class="content-area">
+            <div id="request-box" class="hidden" style="margin-bottom:15px;">
+                <p style="font-size:12px; color:var(--gray); text-transform:uppercase;">Requests</p>
                 <div id="request-list"></div>
             </div>
+            <div id="friend-list"></div>
+        </div>
 
-            <div class="section-label">Friends</div>
-            <div id="friend-list">
+        <div id="tab-status" class="content-area hidden">
+            <div class="user-card">
+                <div class="info">
+                    <div class="name">My Status</div>
+                    <p style="font-size:12px; color:var(--gray);">Tap to add status update</p>
                 </div>
+                <button class="action-btn">+</button>
+            </div>
+            <p style="text-align:center; color:var(--gray); margin-top:20px;">No recent updates</p>
+        </div>
+
+        <div id="tab-search" class="content-area hidden">
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <input id="search-box" placeholder="Search username..." style="margin:0;">
+                <button class="action-btn" onclick="searchUser()">Search</button>
+            </div>
+            <div id="search-results"></div>
         </div>
     </div>
 
     <div id="chat-screen" class="screen">
-        <div class="chat-header">
-            <button class="back-btn" onclick="goBack()"><i class="fa-solid fa-arrow-left"></i></button>
-            <img id="chat-partner-dp" src="" class="mini-profile" style="margin-right:10px;">
-            <div style="flex:1;">
-                <h3 id="chat-partner-name" style="font-size:16px;">User</h3>
-                <span style="font-size:12px; color:var(--primary);">Online</span>
-            </div>
+        <div class="chat-head">
+            <button class="icon-btn" onclick="document.getElementById('dashboard-screen').classList.add('active')" style="margin-right:10px;"><i class="fa-solid fa-arrow-left"></i></button>
+            <img id="chat-partner-dp" src="" class="avatar" style="width:35px; height:35px;">
+            <div class="name" id="chat-partner-name">User</div>
         </div>
+        
+        <div id="messages" class="messages"></div>
 
-        <div id="chat-messages" class="chat-area"></div>
-
-        <form id="chat-form" class="chat-input-area">
-            <input id="msg-input" class="chat-input" placeholder="Type a message..." autocomplete="off">
-            <button type="submit" class="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
-        </form>
+        <div class="chat-input">
+            <button class="icon-btn" onclick="document.getElementById('media-input').click()"><i class="fa-solid fa-paperclip"></i></button>
+            <input type="file" id="media-input" hidden accept="image/*,video/*">
+            <input id="msg-input" placeholder="Message..." style="margin:0; flex:1;">
+            <button class="icon-btn" onclick="sendMessage()" style="color:var(--primary);"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
     </div>
+</div>
 
-    </div>
-    <script src="/socket.io/socket.io.js"></script>
+<script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
-    let isLoginMode = true;
-    let myUsername = '';
-    let currentChatFriend = '';
-    let uploadedAvatar = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+    let myUser = null;
+    let currentFriend = null;
+    let uploadedDp = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
-    // --- Screen Navigation ---
-    function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-
-    // --- Avatar Handling ---
-    document.getElementById('file-input').addEventListener('change', function() {
-        const file = this.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                uploadedAvatar = e.target.result;
-                document.getElementById('preview-dp').src = uploadedAvatar;
-            }
-            reader.readAsDataURL(file);
+    // DP Preview
+    document.getElementById('dp-input').addEventListener('change', function() {
+        const reader = new FileReader();
+        reader.onload = e => {
+            uploadedDp = e.target.result;
+            document.getElementById('preview-dp').src = uploadedDp;
         }
+        reader.readAsDataURL(this.files[0]);
     });
 
-    // --- Login/Signup Toggle ---
-    function toggleAuthMode() {
-        isLoginMode = !isLoginMode;
-        const title = document.querySelector('.app-title');
-        const btn = document.getElementById('auth-btn');
-        const toggleText = document.getElementById('toggle-text');
-        const avatarSec = document.getElementById('avatar-section');
-
-        if (isLoginMode) {
-            title.innerText = 'Welcome Back';
-            btn.innerText = 'Login';
-            toggleText.innerText = "Don't have an account? Sign Up";
-            avatarSec.classList.add('hidden');
-        } else {
-            title.innerText = 'Create Account';
-            btn.innerText = 'Sign Up';
-            toggleText.innerText = "Already have an account? Login";
-            avatarSec.classList.remove('hidden');
-        }
-    }
-
-    // --- Authentication ---
-    function handleAuth() {
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value.trim();
-        
-        if (!username || !password) return alert("Please fill all fields");
-
-        const btn = document.getElementById('auth-btn');
+    // Auth
+    function auth(type) {
+        const u = document.getElementById('username').value;
+        const p = document.getElementById('password').value;
+        const btn = document.querySelector('.btn');
         btn.innerText = "Processing...";
         
-        if (isLoginMode) {
-            socket.emit('login', { username, password });
-        } else {
-            socket.emit('register', { username, password, avatar: uploadedAvatar });
-        }
+        if(type === 'register') socket.emit('register', { username: u, password: p, avatar: uploadedDp });
+        else socket.emit('login', { username: u, password: p });
     }
 
     socket.on('auth-success', (data) => {
-        myUsername = data.username;
-        document.getElementById('my-nav-dp').src = data.avatar || uploadedAvatar;
+        myUser = data;
+        document.getElementById('my-nav-dp').src = data.avatar || uploadedDp;
+        document.getElementById('login-screen').classList.remove('active');
         
-        // Reset Button
-        document.getElementById('auth-btn').innerText = isLoginMode ? 'Login' : 'Sign Up';
-        
-        // Load Data
-        updateFriendList(data.friends);
-        updateRequestList(data.requests);
-        
-        showScreen('dashboard-screen');
-    });
-
-    socket.on('auth-error', (msg) => {
-        alert(msg);
-        document.getElementById('auth-btn').innerText = isLoginMode ? 'Login' : 'Sign Up';
-    });
-
-    // --- Requests ---
-    function sendRequest() {
-        const target = document.getElementById('search-user').value.trim();
-        if(target) {
-            socket.emit('send-request', { sender: myUsername, target: target });
-            document.getElementById('search-user').value = '';
-        }
-    }
-
-    socket.on('request-sent', () => alert("Request sent successfully!"));
-    socket.on('request-error', (msg) => alert(msg));
-
-    socket.on('new-request', (senderName) => {
-        const list = document.getElementById('request-list');
-        document.getElementById('request-section').classList.remove('hidden');
-        
-        const div = document.createElement('div');
-        div.className = 'user-item';
-        div.innerHTML = `
-            <div class="user-avatar"></div>
-            <div class="user-info">
-                <div class="user-name">${senderName}</div>
-                <div class="user-status">Sent you a request</div>
-            </div>
-            <button class="action-btn btn-accept" onclick="acceptReq('${senderName}')">Accept</button>
-        `;
-        list.appendChild(div);
-    });
-
-    function acceptReq(friendName) {
-        socket.emit('accept-request', { myName: myUsername, friendName: friendName });
-        document.getElementById('request-section').classList.add('hidden'); 
-    }
-
-    // --- Friend List ---
-    function updateFriendList(friends) {
+        // Load Friends
         const list = document.getElementById('friend-list');
         list.innerHTML = '';
-        friends.forEach(name => {
-            const div = document.createElement('div');
-            div.className = 'user-item';
-            div.onclick = () => startChat(name);
+        // Note: For full app we need to fetch friend details (DP) from server. 
+        // For now using placeholder or stored data if available
+        data.friends.forEach(f => addFriendToList(f, 'https://cdn-icons-png.flaticon.com/512/149/149071.png')); 
+        
+        // Load Requests
+        if(data.requests.length) {
+            document.getElementById('request-box').classList.remove('hidden');
+            data.requests.forEach(r => addRequestToList(r));
+        }
+    });
+
+    socket.on('auth-error', msg => { alert(msg); document.querySelector('.btn').innerText = "Login"; });
+
+    // Tabs
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.content-area').forEach(c => c.classList.add('hidden'));
+        
+        event.target.classList.add('active');
+        document.getElementById('tab-'+tabName).classList.remove('hidden');
+    }
+
+    // Search Logic (Fixed)
+    function searchUser() {
+        const query = document.getElementById('search-box').value;
+        socket.emit('search-user', query);
+    }
+
+    socket.on('search-result', (data) => {
+        const div = document.getElementById('search-results');
+        div.innerHTML = '';
+        
+        if(data.found) {
             div.innerHTML = `
-                <img src="https://ui-avatars.com/api/?name=${name}&background=random" class="user-avatar">
-                <div class="user-info">
-                    <div class="user-name">${name}</div>
-                    <div class="user-status">Tap to chat</div>
-                </div>
-                <i class="fa-solid fa-chevron-right" style="color:var(--text-gray); font-size:12px;"></i>
-            `;
-            list.appendChild(div);
-        });
-    }
-
-    function updateRequestList(requests) {
-        const list = document.getElementById('request-list');
-        list.innerHTML = '';
-        
-        if (requests && requests.length > 0) {
-            document.getElementById('request-section').classList.remove('hidden');
-            requests.forEach(name => {
-                const div = document.createElement('div');
-                div.className = 'user-item';
-                div.innerHTML = `
-                    <img src="https://ui-avatars.com/api/?name=${name}&background=random" class="user-avatar">
-                    <div class="user-info">
-                        <div class="user-name">${name}</div>
-                        <div class="user-status">Wants to chat</div>
-                    </div>
-                    <button class="action-btn btn-accept" onclick="acceptReq('${name}')">Accept</button>
-                `;
-                list.appendChild(div);
-            });
+                <div class="user-card">
+                    <img src="${data.avatar}" class="avatar">
+                    <div class="info"><div class="name">${data.username}</div></div>
+                    <button class="action-btn" onclick="sendReq('${data.username}')">Add</button>
+                </div>`;
         } else {
-            document.getElementById('request-section').classList.add('hidden');
+            div.innerHTML = '<p style="text-align:center; color:var(--gray)">User not found</p>';
         }
+    });
+
+    function sendReq(target) { socket.emit('send-request', { sender: myUser.username, target }); }
+    socket.on('request-sent', () => alert("Request Sent!"));
+    socket.on('request-error', msg => alert(msg));
+
+    // Request Handling
+    socket.on('new-request', (data) => {
+        document.getElementById('request-box').classList.remove('hidden');
+        addRequestToList(data.sender); // In real app, use data.avatar
+    });
+
+    function addRequestToList(name) {
+        const div = document.getElementById('request-list');
+        div.innerHTML += `
+            <div class="user-card">
+                <div class="info"><div class="name">${name}</div></div>
+                <button class="action-btn" onclick="acceptReq('${name}')">Accept</button>
+            </div>`;
     }
 
-    socket.on('friend-added', (friendName) => {
+    function acceptReq(name) {
+        socket.emit('accept-request', { myName: myUser.username, friendName: name });
+        document.getElementById('request-box').classList.add('hidden'); // Simplified
+    }
+
+    socket.on('friend-added', (data) => {
+        addFriendToList(data.username, data.avatar);
+    });
+
+    function addFriendToList(name, avatar) {
         const list = document.getElementById('friend-list');
-        const div = document.createElement('div');
-        div.className = 'user-item';
-        div.onclick = () => startChat(friendName);
-        div.innerHTML = `
-            <img src="https://ui-avatars.com/api/?name=${friendName}&background=random" class="user-avatar">
-            <div class="user-info">
-                <div class="user-name">${friendName}</div>
-                <div class="user-status">New Friend</div>
-            </div>
-        `;
-        list.appendChild(div);
-    });
+        const item = document.createElement('div');
+        item.className = 'user-card';
+        item.onclick = () => openChat(name, avatar);
+        item.innerHTML = `
+            <img src="${avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="avatar">
+            <div class="info">
+                <div class="name">${name}</div>
+                <div style="font-size:12px; color:var(--primary);">Tap to chat</div>
+            </div>`;
+        list.appendChild(item);
+    }
 
-    // --- Chat Logic ---
-    function startChat(name) {
-        currentChatFriend = name;
+    // Chat & Media Logic
+    function openChat(name, avatar) {
+        currentFriend = name;
         document.getElementById('chat-partner-name').innerText = name;
-        document.getElementById('chat-partner-dp').src = `https://ui-avatars.com/api/?name=${name}&background=random`;
-        document.getElementById('chat-messages').innerHTML = ''; 
-        
-        socket.emit('join-chat', { user1: myUsername, user2: name });
-        showScreen('chat-screen');
+        document.getElementById('chat-partner-dp').src = avatar;
+        document.getElementById('messages').innerHTML = '';
+        socket.emit('join-chat', { user1: myUser.username, user2: name });
+        document.getElementById('chat-screen').classList.add('active');
     }
 
-    function goBack() {
-        showScreen('dashboard-screen');
-        currentChatFriend = '';
-    }
+    // File Handling
+    document.getElementById('media-input').addEventListener('change', function() {
+        const file = this.files[0];
+        if(!file) return;
 
-    document.getElementById('chat-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const input = document.getElementById('msg-input');
-        const text = input.value.trim();
-        
-        if (text && currentChatFriend) {
-            appendMessage({ sender: myUsername, text: text, createdAt: new Date() });
-            socket.emit('private-message', { sender: myUsername, friendName: currentChatFriend, msg: text });
-            input.value = '';
+        // Check size (100MB = 100 * 1024 * 1024)
+        if(file.size > 100 * 1024 * 1024) return alert("File too large! Max 100MB");
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const type = file.type.startsWith('image') ? 'image' : 'video';
+            const data = e.target.result;
+            
+            // Send to server
+            socket.emit('private-message', { 
+                sender: myUser.username, 
+                friendName: currentFriend, 
+                text: '', 
+                file: data, 
+                fileType: type 
+            });
         }
+        reader.readAsDataURL(file);
     });
+
+    function sendMessage() {
+        const txt = document.getElementById('msg-input').value;
+        if(txt) {
+            socket.emit('private-message', { sender: myUser.username, friendName: currentFriend, text: txt });
+            document.getElementById('msg-input').value = '';
+        }
+    }
 
     socket.on('receive-message', (data) => {
-        if (currentChatFriend && (data.sender === currentChatFriend)) {
-            appendMessage(data);
+        if(currentFriend && (data.sender === currentFriend || data.sender === myUser.username)) {
+            const div = document.createElement('div');
+            const isMe = data.sender === myUser.username;
+            div.className = `msg ${isMe ? 'my-msg' : 'other-msg'}`;
+            
+            let content = data.text ? `<div>${data.text}</div>` : '';
+            
+            if(data.file) {
+                if(data.fileType === 'image') {
+                    content += `<img src="${data.file}" class="media-msg">`;
+                } else if (data.fileType === 'video') {
+                    content += `<video src="${data.file}" controls class="media-msg"></video>`;
+                }
+            }
+            
+            div.innerHTML = content;
+            document.getElementById('messages').appendChild(div);
+            document.getElementById('messages').scrollTop = 99999;
         }
     });
 
-    socket.on('load-messages', (msgs) => {
-        const container = document.getElementById('chat-messages');
-        container.innerHTML = '';
-        msgs.forEach(appendMessage);
+    socket.on('load-messages', msgs => {
+        msgs.forEach(m => {
+            // Re-use logic above (simplified for brevity)
+             const div = document.createElement('div');
+            const isMe = m.sender === myUser.username;
+            div.className = `msg ${isMe ? 'my-msg' : 'other-msg'}`;
+            let content = m.text ? `<div>${m.text}</div>` : '';
+            if(m.file) {
+                if(m.fileType === 'image') content += `<img src="${m.file}" class="media-msg">`;
+                else content += `<video src="${m.file}" controls class="media-msg"></video>`;
+            }
+            div.innerHTML = content;
+            document.getElementById('messages').appendChild(div);
+        });
     });
-
-    function appendMessage(data) {
-        const container = document.getElementById('chat-messages');
-        const div = document.createElement('div');
-        const isMe = data.sender === myUsername;
-        
-        div.className = `message ${isMe ? 'my-msg' : 'other-msg'}`;
-        div.innerHTML = `
-            ${data.text}
-            <span class="msg-time">${new Date(data.createdAt || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-        `;
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
-    }
 
 </script>
 </body>
