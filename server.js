@@ -26,12 +26,40 @@ const UserSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', UserSchema);
 
+// server.js এ Message Schema আপডেট করুন
 const MessageSchema = new mongoose.Schema({
   roomID: String,
   sender: String,
   text: String,
-  file: String, // Only Photos
+  file: String,
+  voice: String, // ভয়েস মেসেজের জন্য
+  status: { type: String, default: 'sent' }, // 'sent' বা 'seen'
   createdAt: { type: Date, default: Date.now }
+});
+
+// আপনার অনুরোধ অনুযায়ী ১৫ মিনিট পর মেসেজ ডিলিট (৯০০ সেকেন্ড)
+MessageSchema.index({ createdAt: 1 }, { expireAfterSeconds: 900 });
+
+// অনলাইন ইউজার ট্র্যাকিং
+let onlineUsers = new Set();
+
+io.on('connection', (socket) => {
+  socket.on('join-user', (username) => {
+    socket.username = username;
+    onlineUsers.add(username);
+    io.emit('user-online-status', Array.from(onlineUsers));
+  });
+
+  socket.on('disconnect', () => {
+    onlineUsers.delete(socket.username);
+    io.emit('user-online-status', Array.from(onlineUsers));
+  });
+
+  // মেসেজ সিন (Seen) হলে ডাবল টিকের জন্য
+  socket.on('message-seen', async ({ msgId, roomID }) => {
+    await Message.updateOne({ _id: msgId }, { status: 'seen' });
+    io.to(roomID).emit('update-tick', { msgId, status: 'seen' });
+  });
 });
 // 🔥 ৩ ঘণ্টা (১০৮০০ সেকেন্ড) পর ডাটাবেস থেকে অটো ডিলিট হবে
 MessageSchema.index({ createdAt: 1 }, { expireAfterSeconds: 10800 });
