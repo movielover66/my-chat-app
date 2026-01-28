@@ -14,7 +14,6 @@
         /* Utility */
         .hidden { display: none !important; }
         .flex { display: flex; }
-        .center { align-items: center; justify-content: center; }
         
         /* Auth Screen */
         #auth-view { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #1e1b4b, #0f172a); padding: 20px; }
@@ -67,15 +66,14 @@
 
         .footer-credit { position: fixed; bottom: 10px; width: 100%; text-align: center; color: #475569; font-size: 12px; font-weight: bold; pointer-events: none; }
         
-        /* Desktop fix */
         @media(min-width: 768px) {
             body { max-width: 450px; margin: 0 auto; border: 1px solid #334155; }
-            .sidebar { display: flex; }
         }
     </style>
 </head>
 <body>
     <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2346/2346-preview.m4a"></audio>
+
     <div id="auth-view">
         <div class="auth-card">
             <h1 class="logo">⚡ Ultima</h1>
@@ -106,7 +104,7 @@
                     <div class="status-ring add-status">+</div>
                     <span style="font-size:10px;">My Status</span>
                 </div>
-                </div>
+            </div>
 
             <div class="search-area">
                 <input type="text" id="search-input" placeholder="Search user..." oninput="searchUser(this.value)">
@@ -114,8 +112,8 @@
             </div>
 
             <div style="padding: 10px; color: #94a3b8; font-size: 12px; font-weight: bold;">MESSAGES</div>
-            <div id="friends-list" style="flex:1; overflow-y:auto;">
-                </div>
+            <div id="friends-list" style="flex:1; overflow-y:auto;"></div>
+            
             <div class="footer-credit">Developed by PRITAM</div>
         </div>
     </div>
@@ -130,8 +128,7 @@
             </div>
         </div>
         
-        <div class="chat-body" id="chat-box">
-            </div>
+        <div class="chat-body" id="chat-box"></div>
         <div class="typing-indicator" id="typing-ind">Typing...</div>
 
         <div class="chat-input-area">
@@ -141,11 +138,10 @@
             <button class="btn-primary" style="width: 50px; border-radius: 50%;" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
-    
- <div id="profile-modal" class="modal">
+
+    <div id="profile-modal" class="modal">
         <div class="modal-content">
             <h3>Edit Profile</h3>
-            
             <img id="edit-preview" src="" style="width:100px; height:100px; border-radius:50%; object-fit:cover; margin:15px auto; display:block; border: 3px solid #7c3aed;">
             
             <label for="avatar-upload" class="btn-primary" style="display:block; width:100%; margin-bottom:10px; cursor:pointer;">
@@ -154,260 +150,244 @@
             <input type="file" id="avatar-upload" hidden accept="image/*" onchange="previewMyDP(this)">
             
             <input type="text" id="edit-bio" placeholder="Update your bio...">
-            
             <button class="btn-primary" onclick="saveProfile()">Save Changes</button>
             <button onclick="document.getElementById('profile-modal').style.display='none'" style="margin-top:10px; background:transparent; border:none; color: #94a3b8;">Cancel</button>
         </div>
-        </div>
-    <script>
-    const socket = io();
-    let me = JSON.parse(localStorage.getItem('ultima_user')) || null;
-    let currentRoom = null;
-    let typingTimer;
+    </div>
+        <script>
+        const socket = io();
+        let me = JSON.parse(localStorage.getItem('ultima_user')) || null;
+        let currentRoom = null;
+        let typingTimer;
 
-    // --- 1. Session Check (Refresh fix) ---
-    window.onload = () => {
-        if(me) {
-            initApp(me);
-            socket.emit('login', { username: me.username, password: me.password });
-        }
-    };
-
-    function handleAuth() {
-        const u = document.getElementById('username').value.trim();
-        const p = document.getElementById('password').value.trim();
-        if(!u || !p) return;
-        socket.emit('register', { username: u, password: p }); // Try Register first
-        
-        // Listen for error, if username taken -> try login
-        socket.once('auth-error', (err) => {
-            if(err === 'Username taken!') socket.emit('login', { username: u, password: p });
-            else document.getElementById('auth-err').innerText = err;
-        });
-    }
-
-    socket.on('auth-success', (user) => {
-        localStorage.setItem('ultima_user', JSON.stringify(user));
-        me = user;
-        initApp(user);
-    });
-
-    function initApp(user) {
-        document.getElementById('auth-view').classList.add('hidden');
-        document.getElementById('main-view').style.display = 'block';
-        updateMyUI(user);
-        socket.emit('join-user', user.username);
-        loadFriendsList(user.friends, user.requests);
-    }
-
-    function updateMyUI(user) {
-        document.getElementById('my-name').innerText = user.username;
-        document.getElementById('my-dp').src = user.avatar;
-        document.getElementById('edit-bio').value = user.bio;
-        document.getElementById('edit-avatar').value = user.avatar;
-        document.getElementById('edit-preview').src = user.avatar;
-    }
-
-    function logout() {
-        localStorage.removeItem('ultima_user');
-        location.reload();
-    }
-
-    // --- 2. Profile & Search ---
-    function openProfileModal() { document.getElementById('profile-modal').style.display = 'flex'; }
-    
-        // নতুন ফাংশন: ছবি সিলেক্ট করলে প্রিভিউ দেখাবে এবং Base64 বানাবে
-    let newAvatarBase64 = "";
-
-    function previewMyDP(input) {
-        const file = input.files[0];
-        if (!file) return;
-
-        // সাইজ লিমিট (১ এমবি এর বেশি হলে আটকাবে)
-        if (file.size > 1024 * 1024) {
-            alert("Please select a smaller image (Max 1MB) to keep app fast!");
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            document.getElementById('edit-preview').src = e.target.result;
-            newAvatarBase64 = e.target.result; // ডাটাবেসে পাঠানোর জন্য রেডি
+        // --- 1. Session Check & Init ---
+        window.onload = () => {
+            if(me) {
+                initApp(me);
+                socket.emit('login', { username: me.username, password: me.password });
+            }
         };
-        reader.readAsDataURL(file);
-    }
 
-    // আপডেট করা সেভ ফাংশন
-    function saveProfile() {
-        const newBio = document.getElementById('edit-bio').value;
-        // যদি নতুন ছবি দেয় তো ভালো, না দিলে আগেরটাই থাকবে
-        const avatarToSend = newAvatarBase64 || document.getElementById('my-dp').src;
-        
-        socket.emit('update-profile', { 
-            username: me.username, 
-            bio: newBio, 
-            avatar: avatarToSend 
+        function handleAuth() {
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
+            if(!u || !p) return;
+            socket.emit('register', { username: u, password: p }); 
+            
+            socket.once('auth-error', (err) => {
+                if(err === 'Username taken!') socket.emit('login', { username: u, password: p });
+                else document.getElementById('auth-err').innerText = err;
+            });
+        }
+
+        socket.on('auth-success', (user) => {
+            localStorage.setItem('ultima_user', JSON.stringify(user));
+            me = user;
+            initApp(user);
         });
-        
-        document.getElementById('profile-modal').style.display = 'none';
-        alert("Updating profile... Please wait.");
-    }
-    
-    socket.on('profile-updated', (user) => {
-        me = user;
-        localStorage.setItem('ultima_user', JSON.stringify(user));
-        updateMyUI(user);
-        alert('Profile Updated!');
-    });
 
-    function searchUser(query) {
-        if(query.length < 2) { document.getElementById('search-results').style.display = 'none'; return; }
-        socket.emit('search-user', query);
-    }
+        function initApp(user) {
+            document.getElementById('auth-view').classList.add('hidden');
+            document.getElementById('main-view').style.display = 'block';
+            updateMyUI(user);
+            socket.emit('join-user', user.username);
+            loadFriendsList(user.friends || [], user.requests || []);
+        }
 
-    socket.on('search-result', (data) => {
-        const resDiv = document.getElementById('search-results');
-        resDiv.style.display = 'block';
-        resDiv.innerHTML = '';
+        function updateMyUI(user) {
+            document.getElementById('my-name').innerText = user.username;
+            document.getElementById('my-dp').src = user.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+            if(document.getElementById('edit-bio')) document.getElementById('edit-bio').value = user.bio || "";
+            if(document.getElementById('edit-preview')) document.getElementById('edit-preview').src = user.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+        }
+
+        function logout() {
+            localStorage.removeItem('ultima_user');
+            location.reload();
+        }
+
+        // --- 2. Profile & Search ---
+        function openProfileModal() { document.getElementById('profile-modal').style.display = 'flex'; }
         
-        if(data.found) {
-            const div = document.createElement('div');
-            div.className = 'result-item';
-            div.innerHTML = `<img src="${data.avatar}" class="avatar-sm"> 
-                             <div><b>${data.username}</b><br><small style="color:#94a3b8">${data.bio}</small></div>`;
-            div.onclick = () => {
-                if(data.username === me.username) return;
-                requestChat(data.username);
+        let newAvatarBase64 = "";
+        function previewMyDP(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 1024 * 1024) return alert("Max 1MB allowed!");
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('edit-preview').src = e.target.result;
+                newAvatarBase64 = e.target.result;
             };
-            resDiv.appendChild(div);
-        } else {
-            resDiv.innerHTML = '<div style="padding:10px; color:#94a3b8">User not found</div>';
+            reader.readAsDataURL(file);
         }
-    });
 
-    function requestChat(targetUser) {
-        if(confirm(`Send message request to ${targetUser}?`)) {
-            socket.emit('send-request', { sender: me.username, target: targetUser });
+        function saveProfile() {
+            const newBio = document.getElementById('edit-bio').value;
+            const avatarToSend = newAvatarBase64 || document.getElementById('my-dp').src;
+            
+            socket.emit('update-profile', { username: me.username, bio: newBio, avatar: avatarToSend });
+            document.getElementById('profile-modal').style.display = 'none';
+            alert("Updating profile...");
         }
-    }
-
-    socket.on('req-feedback', msg => alert(msg));
-              </script>
-    <script>
-    // --- 3. Friends & Requests ---
-    function loadFriendsList(friends, requests) {
-        const list = document.getElementById('friends-list');
-        list.innerHTML = '';
         
-        // Show Requests First
-        requests.forEach(req => {
-            const div = document.createElement('div');
-            div.className = 'result-item';
-            div.style.background = '#334155';
-            div.innerHTML = `<div style="flex:1"><b>${req}</b> wants to chat</div> 
-                             <button onclick="acceptReq('${req}')" style="background:#2dd4bf; border:none; padding:5px 10px; border-radius:5px;">Accept</button>`;
-            list.appendChild(div);
+        socket.on('profile-updated', (user) => {
+            me = user;
+            localStorage.setItem('ultima_user', JSON.stringify(user));
+            updateMyUI(user);
+            alert('Profile Updated!');
         });
 
-        // Show Friends
-        friends.forEach(f => {
-            const div = document.createElement('div');
-            div.className = 'result-item';
-            div.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar-sm"> 
-                             <div style="flex:1"><b>${f}</b><br><small style="color:#94a3b8">Tap to chat</small></div>
-                             <i class="fas fa-camera" style="color:#64748b"></i>`;
-            div.onclick = () => startChat(f);
-            list.appendChild(div);
-        });
-    }
-
-    function acceptReq(friend) { socket.emit('accept-request', { myName: me.username, friendName: friend }); }
-    
-    socket.on('new-request', () => location.reload()); // Simple reload to sync
-    socket.on('friend-added', () => location.reload());
-
-    // --- 4. Chat System (Rocket Mode) ---
-    function startChat(friendName) {
-        document.getElementById('main-view').style.display = 'none';
-        document.getElementById('chat-view').style.display = 'flex';
-        document.getElementById('chat-name').innerText = friendName;
-        document.getElementById('chat-box').innerHTML = '';
-        
-        currentRoom = [me.username, friendName].sort().join('-');
-        socket.emit('join-chat', { roomID: currentRoom });
-    }
-
-    function closeChat() {
-        document.getElementById('chat-view').style.display = 'none';
-        document.getElementById('main-view').style.display = 'block';
-        currentRoom = null;
-    }
-
-    function handleTyping() {
-        socket.emit('typing', { roomID: currentRoom, sender: me.username });
-        clearTimeout(typingTimer);
-        typingTimer = setTimeout(() => socket.emit('stop-typing', { roomID: currentRoom }), 1000);
-    }
-
-    socket.on('display-typing', () => document.getElementById('typing-ind').style.visibility = 'visible');
-    socket.on('hide-typing', () => document.getElementById('typing-ind').style.visibility = 'hidden');
-
-    function sendMsg(fileData = null) {
-        const text = document.getElementById('msg-input').value;
-        if(!text && !fileData) return;
-        
-        socket.emit('private-message', {
-            roomID: currentRoom,
-            sender: me.username,
-            text: text,
-            file: fileData // Only Photos
-        });
-        document.getElementById('msg-input').value = '';
-    }
-
-    function uploadPhoto(input) {
-        const file = input.files[0];
-        if(!file) return;
-        if(file.size > 2 * 1024 * 1024) return alert('Photo too big! Keep under 2MB for Rocket Speed.');
-        
-        const reader = new FileReader();
-        reader.onload = () => sendMsg(reader.result);
-        reader.readAsDataURL(file);
-    }
-
-    socket.on('receive-message', (msg) => {
-        const div = document.createElement('div');
-        div.className = `msg ${msg.sender === me.username ? 'msg-me' : 'msg-friend'}`;
-        
-        let content = '';
-        if(msg.file) content += `<img src="${msg.file}"><br>`;
-        if(msg.text) content += `<span>${msg.text}</span>`;
-        
-        div.innerHTML = content + `<br><small style="font-size:9px; opacity:0.6">${new Date(msg.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small>`;
-        
-        document.getElementById('chat-box').appendChild(div);
-        document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
-
-        // Notification Sound
-        if(msg.sender !== me.username) {
-            document.getElementById('notif-sound').play().catch(e => console.log('Interact first'));
+        function searchUser(query) {
+            if(query.length < 2) { document.getElementById('search-results').style.display = 'none'; return; }
+            socket.emit('search-user', query);
         }
-    });
 
-    socket.on('load-messages', (msgs) => {
-        msgs.forEach(msg => {
-            // Re-use logic (simplified for brevity)
+        socket.on('search-result', (data) => {
+            const resDiv = document.getElementById('search-results');
+            resDiv.style.display = 'block';
+            resDiv.innerHTML = '';
+            
+            if(data.found) {
+                const div = document.createElement('div');
+                div.className = 'result-item';
+                div.innerHTML = `<img src="${data.avatar}" class="avatar-sm"> 
+                                 <div><b>${data.username}</b><br><small style="color:#94a3b8">${data.bio || 'Hey there!'}</small></div>`;
+                div.onclick = () => {
+                    if(data.username === me.username) return;
+                    requestChat(data.username);
+                };
+                resDiv.appendChild(div);
+            } else {
+                resDiv.innerHTML = '<div style="padding:10px; color:#94a3b8">User not found</div>';
+            }
+        });
+
+        function requestChat(targetUser) {
+            if(confirm(`Send message request to ${targetUser}?`)) {
+                socket.emit('send-request', { sender: me.username, target: targetUser });
+            }
+        }
+
+        socket.on('req-feedback', msg => alert(msg));
+
+        // --- 3. Friends List Logic ---
+        function loadFriendsList(friends, requests) {
+            const list = document.getElementById('friends-list');
+            list.innerHTML = '';
+            
+            if(requests.length > 0) {
+                 requests.forEach(req => {
+                    const div = document.createElement('div');
+                    div.className = 'result-item';
+                    div.style.background = '#334155';
+                    div.innerHTML = `<div style="flex:1"><b>${req}</b> wants to chat</div> 
+                                     <button onclick="acceptReq('${req}')" style="background:#2dd4bf; border:none; padding:5px 10px; border-radius:5px;">Accept</button>`;
+                    list.appendChild(div);
+                });
+            }
+
+            if(friends.length === 0 && requests.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:20px; color:#64748b;">No friends yet.<br>Search users to connect!</div>';
+            } else {
+                friends.forEach(f => {
+                    const div = document.createElement('div');
+                    div.className = 'result-item';
+                    div.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar-sm"> 
+                                     <div style="flex:1"><b>${f}</b><br><small style="color:#94a3b8">Tap to chat</small></div>
+                                     <i class="fas fa-comment-dots" style="color:#64748b"></i>`;
+                    div.onclick = () => startChat(f);
+                    list.appendChild(div);
+                });
+            }
+        }
+
+        function acceptReq(friend) { socket.emit('accept-request', { myName: me.username, friendName: friend }); }
+        
+        socket.on('new-request', () => location.reload());
+        socket.on('friend-added', () => location.reload());
+
+        // --- 4. Chat System ---
+        function startChat(friendName) {
+            document.getElementById('main-view').style.display = 'none';
+            document.getElementById('chat-view').style.display = 'flex';
+            document.getElementById('chat-name').innerText = friendName;
+            document.getElementById('chat-dp').src = "https://cdn-icons-png.flaticon.com/512/149/149071.png"; 
+            document.getElementById('chat-box').innerHTML = '';
+            
+            currentRoom = [me.username, friendName].sort().join('-');
+            socket.emit('join-chat', { roomID: currentRoom });
+        }
+
+        function closeChat() {
+            document.getElementById('chat-view').style.display = 'none';
+            document.getElementById('main-view').style.display = 'block';
+            currentRoom = null;
+        }
+
+        function handleTyping() {
+            socket.emit('typing', { roomID: currentRoom, sender: me.username });
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => socket.emit('stop-typing', { roomID: currentRoom }), 1000);
+        }
+
+        socket.on('display-typing', () => document.getElementById('typing-ind').style.visibility = 'visible');
+        socket.on('hide-typing', () => document.getElementById('typing-ind').style.visibility = 'hidden');
+
+        function sendMsg(fileData = null) {
+            const text = document.getElementById('msg-input').value;
+            if(!text && !fileData) return;
+            
+            socket.emit('private-message', {
+                roomID: currentRoom,
+                sender: me.username,
+                text: text,
+                file: fileData
+            });
+            document.getElementById('msg-input').value = '';
+        }
+
+        function uploadPhoto(input) {
+            const file = input.files[0];
+            if(!file) return;
+            if(file.size > 2 * 1024 * 1024) return alert('Max 2MB allowed!');
+            
+            const reader = new FileReader();
+            reader.onload = () => sendMsg(reader.result);
+            reader.readAsDataURL(file);
+        }
+
+        socket.on('receive-message', (msg) => {
             const div = document.createElement('div');
             div.className = `msg ${msg.sender === me.username ? 'msg-me' : 'msg-friend'}`;
+            
             let content = '';
             if(msg.file) content += `<img src="${msg.file}"><br>`;
             if(msg.text) content += `<span>${msg.text}</span>`;
-            div.innerHTML = content;
+            
+            div.innerHTML = content + `<br><small style="font-size:9px; opacity:0.6">${new Date(msg.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small>`;
+            
             document.getElementById('chat-box').appendChild(div);
+            document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
+
+            if(msg.sender !== me.username) {
+                document.getElementById('notif-sound').play().catch(e => {});
+            }
         });
-        document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
-    });
-</script>
+
+        socket.on('load-messages', (msgs) => {
+            msgs.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = `msg ${msg.sender === me.username ? 'msg-me' : 'msg-friend'}`;
+                let content = '';
+                if(msg.file) content += `<img src="${msg.file}"><br>`;
+                if(msg.text) content += `<span>${msg.text}</span>`;
+                div.innerHTML = content;
+                document.getElementById('chat-box').appendChild(div);
+            });
+            document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
+        });
+    </script>
 </body>
 </html>
-
