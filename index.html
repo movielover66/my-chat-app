@@ -141,17 +141,24 @@
             <button class="btn-primary" style="width: 50px; border-radius: 50%;" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
-
-    <div id="profile-modal" class="modal">
+    
+ <div id="profile-modal" class="modal">
         <div class="modal-content">
             <h3>Edit Profile</h3>
-            <img id="edit-preview" src="" style="width:80px; height:80px; border-radius:50%; margin:15px auto; display:block;">
-            <input type="text" id="edit-bio" placeholder="Update Bio">
-            <input type="text" id="edit-avatar" placeholder="Paste Image URL" oninput="document.getElementById('edit-preview').src=this.value">
+            
+            <img id="edit-preview" src="" style="width:100px; height:100px; border-radius:50%; object-fit:cover; margin:15px auto; display:block; border: 3px solid #7c3aed;">
+            
+            <label for="avatar-upload" class="btn-primary" style="display:block; width:100%; margin-bottom:10px; cursor:pointer;">
+                <i class="fas fa-camera"></i> Change Photo
+            </label>
+            <input type="file" id="avatar-upload" hidden accept="image/*" onchange="previewMyDP(this)">
+            
+            <input type="text" id="edit-bio" placeholder="Update your bio...">
+            
             <button class="btn-primary" onclick="saveProfile()">Save Changes</button>
             <button onclick="document.getElementById('profile-modal').style.display='none'" style="margin-top:10px; background:transparent; border:none; color: #94a3b8;">Cancel</button>
         </div>
-    </div>
+        </div>
     <script>
     const socket = io();
     let me = JSON.parse(localStorage.getItem('ultima_user')) || null;
