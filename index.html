@@ -436,10 +436,6 @@ function displayMessage(msg) {
     
     // ... আপনার আগের মেসেজ রেন্ডারিং কোড এর সাথে tickHtml যোগ করুন
 }
-
-
-
-
         socket.on('receive-message', (msg) => {
             const div = document.createElement('div');
             div.className = `msg ${msg.sender === me.username ? 'msg-me' : 'msg-friend'}`;
