@@ -5,14 +5,13 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const mongoose = require('mongoose');
 
-// 100MB ফাইল পাঠানোর জন্য লিমিট বাড়ানো হলো
+// ম্যাক্স ফাইল সাইজ ২MB (ফটো ও ফাস্ট লোডিংয়ের জন্য)
 const io = new Server(server, {
-  maxHttpBufferSize: 1e8 // 100 MB
+  maxHttpBufferSize: 2e6 
 });
 
-// ডাটাবেস কানেকশন
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Connected!"))
+  .then(() => console.log("MongoDB Connected! Rocket Mode On 🚀"))
   .catch(err => console.error("DB Error:", err));
 
 // --- Schemas ---
@@ -20,21 +19,23 @@ const UserSchema = new mongoose.Schema({
   username: { type: String, unique: true, required: true },
   password: { type: String, required: true },
   avatar: { type: String, default: "https://cdn-icons-png.flaticon.com/512/149/149071.png" },
+  bio: { type: String, default: "Hey there! I am using Ultima." },
   friends: [String],
   requests: [String],
-  status: { type: String, default: "" }, // স্ট্যাটাস টেক্সট বা ইমেজ লিংক
-  statusTime: { type: Date }
+  lastSeen: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', UserSchema);
 
 const MessageSchema = new mongoose.Schema({
   roomID: String,
   sender: String,
-  text: String, // টেক্সট মেসেজ
-  file: String, // ইমেজ বা ভিডিওর Base64 ডাটা
-  fileType: String, // 'image' or 'video'
-  createdAt: { type: Date, default: Date.now, expires: 10800 } // ৩ ঘণ্টা পর ডিলিট
+  text: String,
+  file: String, // Only Photos
+  createdAt: { type: Date, default: Date.now }
 });
+// 🔥 ৩ ঘণ্টা (১০৮০০ সেকেন্ড) পর ডাটাবেস থেকে অটো ডিলিট হবে
+MessageSchema.index({ createdAt: 1 }, { expireAfterSeconds: 10800 });
+
 const Message = mongoose.model('Message', MessageSchema);
 
 app.get('/', (req, res) => {
@@ -43,134 +44,100 @@ app.get('/', (req, res) => {
 
 io.on('connection', (socket) => {
   
-  // 1. Register
-  socket.on('register', async ({ username, password, avatar }) => {
-    try {
-      const existingUser = await User.findOne({ username });
-      if (existingUser) {
-        socket.emit('auth-error', 'Username already taken!');
-      } else {
-        const newUser = new User({ username, password, avatar });
-        await newUser.save();
-        socket.emit('auth-success', { username, avatar: newUser.avatar, friends: [], requests: [] });
-      }
-    } catch (e) {
-      console.log(e);
-      socket.emit('auth-error', 'Server Error during Register');
-    }
+  // 1. Join & Online Status
+  socket.on('join-user', async (username) => {
+    socket.join(username);
+    await User.updateOne({ username }, { lastSeen: new Date() }); // Update Online time
+    io.emit('user-online', username);
   });
 
-  // 2. Login
+  // 2. Auth (Login/Register)
+  socket.on('register', async ({ username, password }) => {
+    try {
+      const exists = await User.findOne({ username });
+      if (exists) return socket.emit('auth-error', 'Username taken!');
+      const newUser = new User({ username, password });
+      await newUser.save();
+      socket.emit('auth-success', newUser);
+    } catch (e) { socket.emit('auth-error', 'Error creating account'); }
+  });
+
   socket.on('login', async ({ username, password }) => {
     try {
-      const user = await User.findOne({ username });
-      if (user && user.password === password) {
-        socket.join(username);
-        socket.emit('auth-success', { 
-          username, 
-          avatar: user.avatar, 
-          friends: user.friends,
-          requests: user.requests 
-        });
-      } else {
-        socket.emit('auth-error', 'Wrong username or password!');
-      }
-    } catch (e) {
-      socket.emit('auth-error', 'Login Error');
-    }
-  });
-
-  // 3. Search User (With DP) - এই পার্টটা ফিক্স করা হয়েছে
-  socket.on('search-user', async (query) => {
-    try {
-      // হুবহু নাম মিললে ডাটা পাঠাবে
-      const user = await User.findOne({ username: query }).select('username avatar');
+      const user = await User.findOne({ username, password });
       if (user) {
-        socket.emit('search-result', { found: true, username: user.username, avatar: user.avatar });
+        socket.emit('auth-success', user);
       } else {
-        socket.emit('search-result', { found: false });
+        socket.emit('auth-error', 'Invalid Credentials');
       }
-    } catch (e) {
-      console.log(e);
-    }
+    } catch (e) { socket.emit('auth-error', 'Login Error'); }
   });
 
-  // 4. Send Request
+  // 3. Profile Update
+  socket.on('update-profile', async ({ username, bio, avatar }) => {
+    try {
+      await User.updateOne({ username }, { bio, avatar });
+      const updatedUser = await User.findOne({ username });
+      socket.emit('profile-updated', updatedUser);
+      io.emit('refresh-friend-data', { username, avatar, bio }); // Update for others
+    } catch(e) { console.log(e); }
+  });
+
+  // 4. Search
+  socket.on('search-user', async (query) => {
+    const user = await User.findOne({ username: query }).select('username avatar bio');
+    socket.emit('search-result', user ? { found: true, ...user._doc } : { found: false });
+  });
+
+  // 5. Requests
   socket.on('send-request', async ({ sender, target }) => {
-    try {
-      const targetUser = await User.findOne({ username: target });
-      const senderUser = await User.findOne({ username: sender });
-
-      if (!targetUser) return;
-      if (targetUser.friends.includes(sender)) return socket.emit('request-error', 'Already friends!');
-      if (targetUser.requests.includes(sender)) return socket.emit('request-error', 'Request already sent!');
-
-      targetUser.requests.push(sender);
-      await targetUser.save();
-
-      // লাইভ নোটিফিকেশন (সঙ্গে ছবিও যাবে)
-      io.to(target).emit('new-request', { sender: sender, avatar: senderUser.avatar });
-      socket.emit('request-sent', 'Request sent!');
-    } catch(e) { console.log(e); }
+    const targetUser = await User.findOne({ username: target });
+    if (!targetUser) return;
+    if (targetUser.friends.includes(sender)) return socket.emit('req-feedback', 'Already friends!');
+    if (targetUser.requests.includes(sender)) return socket.emit('req-feedback', 'Request already pending!');
+    
+    targetUser.requests.push(sender);
+    await targetUser.save();
+    io.to(target).emit('new-request', { sender });
+    socket.emit('req-feedback', 'Request Sent!');
   });
 
-  // 5. Accept Request
   socket.on('accept-request', async ({ myName, friendName }) => {
-    try {
-      const me = await User.findOne({ username: myName });
-      const friend = await User.findOne({ username: friendName });
-
-      if (me && friend) {
-        me.friends.push(friendName);
-        me.requests = me.requests.filter(r => r !== friendName);
-        await me.save();
-
-        friend.friends.push(myName);
-        await friend.save();
-
-        // ফ্রেন্ডলিস্ট আপডেট (ছবি সহ)
-        socket.emit('friend-added', { username: friendName, avatar: friend.avatar });
-        io.to(friendName).emit('friend-added', { username: myName, avatar: me.avatar });
-      }
-    } catch(e) { console.log(e); }
+    await User.updateOne({ username: myName }, { $push: { friends: friendName }, $pull: { requests: friendName } });
+    await User.updateOne({ username: friendName }, { $push: { friends: myName } });
+    io.to(myName).emit('friend-added', friendName);
+    io.to(friendName).emit('friend-added', myName);
   });
 
-  // 6. Join Chat
-  socket.on('join-chat', async ({ user1, user2 }) => {
-    const roomID = [user1, user2].sort().join('-');
+  // 6. Chat Logic
+  socket.on('join-chat', async ({ roomID }) => {
     socket.join(roomID);
-    const messages = await Message.find({ roomID }).sort('createdAt');
-    socket.emit('load-messages', messages);
+    const msgs = await Message.find({ roomID }).sort('createdAt');
+    socket.emit('load-messages', msgs);
   });
 
-  // 7. Send Message (Text/Image/Video)
+  socket.on('typing', ({ roomID, sender }) => {
+    socket.to(roomID).emit('display-typing', sender);
+  });
+
+  socket.on('stop-typing', ({ roomID }) => {
+    socket.to(roomID).emit('hide-typing');
+  });
+
   socket.on('private-message', async (data) => {
-    // data = { sender, friendName, text, file, fileType }
-    const roomID = [data.sender, data.friendName].sort().join('-');
-    
     const newMessage = new Message({ 
-      roomID, 
+      roomID: data.roomID, 
       sender: data.sender, 
-      text: data.text,
-      file: data.file,
-      fileType: data.fileType
+      text: data.text, 
+      file: data.file 
     });
-    
-    // ডাটাবেস সেভ করার আগে চেক, খুব বড় ফাইল হলে সার্ভার ক্র্যাশ করতে পারে
-    // তাই আমরা সরাসরি ক্লায়েন্টে আগে পাঠাবো, তারপর সেভ করার চেষ্টা করব
-    io.to(roomID).emit('receive-message', newMessage);
-    
-    try {
-        await newMessage.save();
-    } catch(e) {
-        console.log("File too large for MongoDB free tier, sent but not saved permanently.");
-    }
+    // Save to DB (Auto deletes in 3 hours)
+    await newMessage.save();
+    io.to(data.roomID).emit('receive-message', newMessage);
   });
 
 });
 
 const port = process.env.PORT || 3000;
-server.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+server.listen(port, () => console.log(`Server running on port ${port}`));
 
