@@ -8,81 +8,36 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root { --primary: #7c3aed; --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --input: #334155; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-        
-        /* Utility */
         .hidden { display: none !important; }
-        .flex { display: flex; }
         
-        /* Auth Screen */
-        #auth-view { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at center, #1e1b4b, #0f172a); padding: 20px; }
-        .auth-card { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .logo { font-size: 2.5rem; font-weight: 800; background: linear-gradient(to right, #a78bfa, #2dd4bf); -webkit-background-clip: text; color: transparent; margin-bottom: 10px; }
-        input { width: 100%; padding: 14px; background: var(--input); border: none; border-radius: 10px; color: white; margin-bottom: 15px; outline: none; font-size: 1rem; }
-        .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; }
-        .btn-primary:active { transform: scale(0.98); }
+        /* Auth */
+        #auth-view { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1e1b4b, #0f172a); padding: 20px; }
+        .auth-card { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); padding: 30px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
         
-        /* Main Layout */
-        #main-view { display: none; width: 100%; height: 100%; position: relative; }
-        .sidebar { width: 100%; height: 100%; background: var(--bg); display: flex; flex-direction: column; }
+        /* UI Elements */
+        input { width: 100%; padding: 14px; background: var(--input); border: none; border-radius: 10px; color: white; margin-bottom: 15px; outline: none; }
+        .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
         
-        /* Header */
-        .header { padding: 15px; background: var(--card); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
-        .my-profile { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .avatar-sm { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
-        
-        /* Status Bar */
-        .status-bar { padding: 10px; overflow-x: auto; white-space: nowrap; border-bottom: 1px solid #334155; display: flex; gap: 10px; scrollbar-width: none; }
-        .status-item { display: inline-flex; flex-direction: column; align-items: center; gap: 5px; width: 60px; position: relative; }
-        .status-ring { width: 50px; height: 50px; border-radius: 50%; border: 2px solid #2dd4bf; padding: 2px; }
-        .status-ring img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-        .add-status { border-color: #64748b; border-style: dashed; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #64748b; cursor: pointer; }
+        /* Online/Offline Status */
+        .online-dot { width: 10px; height: 10px; background: #22c55e; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #22c55e; margin-right: 5px; }
+        .offline-text { color: #94a3b8; font-size: 11px; }
 
-        /* Search & Lists */
-        .search-area { padding: 10px; position: relative; }
-        .search-results { position: absolute; top: 60px; left: 10px; right: 10px; background: #1e293b; border-radius: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); z-index: 50; display: none; }
-        .result-item { padding: 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #334155; cursor: pointer; }
-        
-        /* Chat View */
-        #chat-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; display: none; flex-direction: column; z-index: 100; }
-        .chat-header { padding: 10px 15px; background: var(--card); display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #334155; }
-        .chat-body { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); opacity: 0.9; }
-        
-        /* Messages */
-        .msg { max-width: 75%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.4; word-wrap: break-word; position: relative; }
-        .msg-me { align-self: flex-end; background: linear-gradient(135deg, #7c3aed, #6d28d9); border-bottom-right-radius: 4px; }
-        .msg-friend { align-self: flex-start; background: var(--card); border-bottom-left-radius: 4px; }
-        .msg img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
-        
-        /* Typing & Input */
-        .typing-indicator { font-size: 12px; color: #2dd4bf; margin-left: 10px; height: 15px; visibility: hidden; }
-        .chat-input-area { padding: 10px; background: var(--card); display: flex; align-items: center; gap: 10px; }
-        .icon-btn { font-size: 1.5rem; color: #94a3b8; cursor: pointer; }
-        
-        /* Modals */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 200; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 15px; width: 90%; max-width: 350px; text-align: center; }
+        /* Messages & Ticks */
+        .msg { max-width: 75%; padding: 10px; border-radius: 15px; margin-bottom: 8px; position: relative; }
+        .msg-me { align-self: flex-end; background: #7c3aed; }
+        .msg-friend { align-self: flex-start; background: #334155; }
+        .tick { font-size: 10px; margin-left: 5px; color: #94a3b8; }
+        .tick.seen { color: #38bdf8; }
 
-        .footer-credit { position: fixed; bottom: 10px; width: 100%; text-align: center; color: #475569; font-size: 12px; font-weight: bold; pointer-events: none; }
-        
-        @media(min-width: 768px) {
-            body { max-width: 450px; margin: 0 auto; border: 1px solid #334155; }
-        }
+        /* Voice Player */
+        .voice-player { display: flex; align-items: center; gap: 8px; padding: 5px; background: rgba(0,0,0,0.2); border-radius: 10px; cursor: pointer; }
+        .mic-active { color: #ef4444 !important; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
 
-        /* অনলাইন ইন্ডিকেটর */
-.online-dot { width: 10px; height: 10px; background: #22c55e; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 8px #22c55e; }
-.offline-text { color: #94a3b8; font-size: 11px; }
-
-/* টিক মার্ক স্টাইল */
-.tick { font-size: 10px; margin-left: 5px; color: #94a3b8; }
-.tick.seen { color: #38bdf8; }
-
-/* ভয়েস মেসেজ প্লেয়ার */
-.voice-msg { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 20px; }
-.mic-active { color: #ef4444; animation: blink 1s infinite; }
-@keyframes blink { 50% { opacity: 0; } }
-
+        .footer-credit { position: fixed; bottom: 10px; width: 100%; text-align: center; color: #475569; font-size: 12px; font-weight: bold; }
+        @media(min-width: 768px) { body { max-width: 450px; margin: 0 auto; border: 1px solid #334155; } }
     </style>
 </head>
 <body>
@@ -90,398 +45,176 @@
 
     <div id="auth-view">
         <div class="auth-card">
-            <h1 class="logo">⚡ Ultima</h1>
-            <p style="color: #94a3b8; margin-bottom: 20px;">Secure. Fast. Rocket Speed.</p>
-            <input type="text" id="username" placeholder="Username (Unique)">
+            <h1 style="color:#a78bfa; margin-bottom:10px;">⚡ Ultima</h1>
+            <input type="text" id="username" placeholder="Username">
             <input type="password" id="password" placeholder="Password">
             <button class="btn-primary" onclick="handleAuth()">Login / Register</button>
-            <p id="auth-err" style="color: #ef4444; margin-top: 10px; font-size: 14px;"></p>
+            <p id="auth-err" style="color:#ef4444; font-size:12px; margin-top:10px;"></p>
         </div>
         <div class="footer-credit">Developed by PRITAM</div>
     </div>
 
-    <div id="main-view">
-        <div class="sidebar">
-            <div class="header">
-                <div class="my-profile" onclick="openProfileModal()">
-                    <img id="my-dp" src="" class="avatar-sm">
-                    <div>
-                        <h3 id="my-name" style="font-size: 16px;">Loading...</h3>
-                        <span style="font-size: 11px; color: #2dd4bf;">● Online</span>
-                    </div>
-                </div>
-                <button onclick="logout()" style="background:transparent; border:none; color:#ef4444; font-size:20px;"><i class="fas fa-power-off"></i></button>
+    <div id="main-view" class="hidden" style="flex:1; display:flex; flex-direction:column;">
+        <div style="padding:15px; background:var(--card); display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;" onclick="openProfileModal()">
+                <img id="my-dp" src="" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                <div><b id="my-name">...</b><br><small style="color:#2dd4bf;">● Online</small></div>
             </div>
-
-            <div class="status-bar">
-                <div class="status-item" onclick="alert('Status feature coming in update!')">
-                    <div class="status-ring add-status">+</div>
-                    <span style="font-size:10px;">My Status</span>
-                </div>
-            </div>
-
-            <div class="search-area">
-                <input type="text" id="search-input" placeholder="Search user..." oninput="searchUser(this.value)">
-                <div class="search-results" id="search-results"></div>
-            </div>
-
-            <div style="padding: 10px; color: #94a3b8; font-size: 12px; font-weight: bold;">MESSAGES</div>
-            <div id="friends-list" style="flex:1; overflow-y:auto;"></div>
-            
-            <div class="footer-credit">Developed by PRITAM</div>
+            <button onclick="logout()" style="background:none; border:none; color:#ef4444;"><i class="fas fa-power-off"></i></button>
         </div>
+        
+        <div style="padding:10px;"><input type="text" placeholder="Search friends..." oninput="searchUser(this.value)"></div>
+        <div id="friends-list" style="flex:1; overflow-y:auto; padding:10px;"></div>
+        <div class="footer-credit">Developed by PRITAM</div>
     </div>
 
-    <div id="chat-view">
-        <div class="chat-header">
-            <i class="fas fa-arrow-left icon-btn" onclick="closeChat()"></i>
-            <img id="chat-dp" src="" class="avatar-sm">
+    <div id="chat-view" class="hidden" style="position:fixed; inset:0; background:var(--bg); z-index:100; flex-direction:column;">
+        <div style="padding:10px; background:var(--card); display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-arrow-left" onclick="closeChat()"></i>
             <div style="flex:1;">
-                <h3 id="chat-name" style="font-size: 16px;">User</h3>
-                <span id="chat-status" style="font-size: 11px; color: #94a3b8;">Tap for info</span>
+                <b id="chat-name">User</b><br>
+                <span id="chat-status" class="offline-text">Offline</span>
             </div>
         </div>
-        
-        <div class="chat-body" id="chat-box"></div>
-        <div class="typing-indicator" id="typing-ind">Typing...</div>
-
-        <div class="chat-input-area">
-            <label for="file-up" class="icon-btn"><i class="fas fa-image"></i></label>
-            <input type="file" id="file-up" hidden accept="image/*" onchange="uploadPhoto(this)">
-            <input type="text" id="msg-input" placeholder="Type message..." oninput="handleTyping()">
-            <button class="btn-primary" style="width: 50px; border-radius: 50%;" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+        <div id="chat-box" style="flex:1; padding:15px; overflow-y:auto; display:flex; flex-direction:column;"></div>
+        <div id="typing-ind" style="font-size:12px; color:#2dd4bf; padding-left:15px; visibility:hidden;">Typing...</div>
+        <div style="padding:10px; background:var(--card); display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-microphone" id="voice-btn" style="font-size:20px; color:#94a3b8;" onclick="toggleVoice()"></i>
+            <input type="text" id="msg-input" placeholder="Message..." style="margin:0;" oninput="handleTyping()">
+            <i class="fas fa-paper-plane" style="color:var(--primary); font-size:22px;" onclick="sendMsg()"></i>
         </div>
     </div>
 
-    <div id="profile-modal" class="modal">
-        <div class="modal-content">
+    <div id="profile-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:200; align-items:center; justify-content:center; display:flex;">
+        <div class="auth-card">
             <h3>Edit Profile</h3>
-            <img id="edit-preview" src="" style="width:100px; height:100px; border-radius:50%; object-fit:cover; margin:15px auto; display:block; border: 3px solid #7c3aed;">
-            
-            <label for="avatar-upload" class="btn-primary" style="display:block; width:100%; margin-bottom:10px; cursor:pointer;">
-                <i class="fas fa-camera"></i> Change Photo
-            </label>
-            <input type="file" id="avatar-upload" hidden accept="image/*" onchange="previewMyDP(this)">
-            
-            <input type="text" id="edit-bio" placeholder="Update your bio...">
-            <button class="btn-primary" onclick="saveProfile()">Save Changes</button>
-            <button onclick="document.getElementById('profile-modal').style.display='none'" style="margin-top:10px; background:transparent; border:none; color: #94a3b8;">Cancel</button>
+            <img id="edit-preview" style="width:80px; height:80px; border-radius:50%; margin:15px auto; display:block;">
+            <input type="file" id="up-file" hidden onchange="previewMyDP(this)">
+            <button class="btn-primary" onclick="document.getElementById('up-file').click()">Select Photo</button>
+            <button class="btn-primary" style="margin-top:10px;" onclick="saveProfile()">Save</button>
+            <button onclick="document.getElementById('profile-modal').classList.add('hidden')" style="background:none; border:none; color:grey; margin-top:10px;">Close</button>
         </div>
     </div>
-        <script>
-        const socket = io();
-        let me = JSON.parse(localStorage.getItem('ultima_user')) || null;
-        let currentRoom = null;
-        let typingTimer;
+<script>
+    const socket = io();
+    let me = JSON.parse(localStorage.getItem('ultima_user')) || null;
+    let currentRoom = null;
+    let onlineList = [];
+    let mediaRecorder, audioChunks = [];
 
-        // --- 1. Session Check & Init ---
-        window.onload = () => {
-            if(me) {
-                initApp(me);
-                socket.emit('login', { username: me.username, password: me.password });
-            }
-        };
+    window.onload = () => { if(me) { initApp(me); socket.emit('login', me); } };
 
-        function handleAuth() {
-            const u = document.getElementById('username').value.trim();
-            const p = document.getElementById('password').value.trim();
-            if(!u || !p) return;
-            socket.emit('register', { username: u, password: p }); 
-            
-            socket.once('auth-error', (err) => {
-                if(err === 'Username taken!') socket.emit('login', { username: u, password: p });
-                else document.getElementById('auth-err').innerText = err;
-            });
-        }
-
-        socket.on('auth-success', (user) => {
-            localStorage.setItem('ultima_user', JSON.stringify(user));
-            me = user;
-            initApp(user);
+    function handleAuth() {
+        const u = document.getElementById('username').value.trim();
+        const p = document.getElementById('password').value.trim();
+        if(!u || !p) return;
+        socket.emit('register', { username: u, password: p });
+        socket.once('auth-error', (err) => {
+            if(err === 'Username taken!') socket.emit('login', { username: u, password: p });
+            else document.getElementById('auth-err').innerText = err;
         });
+    }
 
-        function initApp(user) {
-            document.getElementById('auth-view').classList.add('hidden');
-            document.getElementById('main-view').style.display = 'block';
-            updateMyUI(user);
-            socket.emit('join-user', user.username);
-            loadFriendsList(user.friends || [], user.requests || []);
+    socket.on('auth-success', (user) => { 
+        me = user; localStorage.setItem('ultima_user', JSON.stringify(user)); initApp(user); 
+    });
+
+    function initApp(user) {
+        document.getElementById('auth-view').classList.add('hidden');
+        document.getElementById('main-view').classList.remove('hidden');
+        document.getElementById('my-name').innerText = user.username;
+        document.getElementById('my-dp').src = user.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+        socket.emit('join-user', user.username);
+        renderFriends(user.friends || []);
+    }
+
+    // --- Online Status Logic ---
+    socket.on('user-online-status', (list) => {
+        onlineList = list;
+        const status = document.getElementById('chat-status');
+        const activeChat = document.getElementById('chat-name').innerText;
+        if(onlineList.includes(activeChat)) {
+            status.innerHTML = `<span class="online-dot"></span> Online`;
+            document.getElementById('voice-btn').style.opacity = "1";
+        } else {
+            status.innerHTML = "Offline";
+            document.getElementById('voice-btn').style.opacity = "0.3";
         }
+    });
 
-        function updateMyUI(user) {
-            document.getElementById('my-name').innerText = user.username;
-            document.getElementById('my-dp').src = user.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-            if(document.getElementById('edit-bio')) document.getElementById('edit-bio').value = user.bio || "";
-            if(document.getElementById('edit-preview')) document.getElementById('edit-preview').src = user.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+    // --- Voice Recording (Only if Online) ---
+    async function toggleVoice() {
+        if(!onlineList.includes(document.getElementById('chat-name').innerText)) {
+            return alert("Friend is offline! Voice messages only allowed when online.");
         }
-
-        function logout() {
-            localStorage.removeItem('ultima_user');
-            location.reload();
-        }
-
-        // --- 2. Profile & Search ---
-        function openProfileModal() { document.getElementById('profile-modal').style.display = 'flex'; }
-        
-        let newAvatarBase64 = "";
-        function previewMyDP(input) {
-            const file = input.files[0];
-            if (!file) return;
-            if (file.size > 1024 * 1024) return alert("Max 1MB allowed!");
-
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                document.getElementById('edit-preview').src = e.target.result;
-                newAvatarBase64 = e.target.result;
+        if(!mediaRecorder || mediaRecorder.state === "inactive") {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.start();
+            document.getElementById('voice-btn').classList.add('mic-active');
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(audioChunks, { type: 'audio/mp3' });
+                const reader = new FileReader();
+                reader.onloadend = () => socket.emit('private-message', { roomID: currentRoom, sender: me.username, voice: reader.result });
+                reader.readAsDataURL(blob);
+                audioChunks = [];
             };
-            reader.readAsDataURL(file);
+        } else {
+            mediaRecorder.stop();
+            document.getElementById('voice-btn').classList.remove('mic-active');
         }
+    }
 
-        function saveProfile() {
-            const newBio = document.getElementById('edit-bio').value;
-            const avatarToSend = newAvatarBase64 || document.getElementById('my-dp').src;
-            
-            socket.emit('update-profile', { username: me.username, bio: newBio, avatar: avatarToSend });
-            document.getElementById('profile-modal').style.display = 'none';
-            alert("Updating profile...");
-        }
+    // --- Message Logic with Ticks ---
+    function sendMsg() {
+        const text = document.getElementById('msg-input').value;
+        if(!text) return;
+        socket.emit('private-message', { roomID: currentRoom, sender: me.username, text });
+        document.getElementById('msg-input').value = '';
+    }
+
+    socket.on('receive-message', (msg) => {
+        const div = document.createElement('div');
+        div.className = `msg ${msg.sender === me.username ? 'msg-me' : 'msg-friend'}`;
         
-        socket.on('profile-updated', (user) => {
-            me = user;
-            localStorage.setItem('ultima_user', JSON.stringify(user));
-            updateMyUI(user);
-            alert('Profile Updated!');
-        });
-
-        function searchUser(query) {
-            if(query.length < 2) { document.getElementById('search-results').style.display = 'none'; return; }
-            socket.emit('search-user', query);
-        }
-
-        socket.on('search-result', (data) => {
-            const resDiv = document.getElementById('search-results');
-            resDiv.style.display = 'block';
-            resDiv.innerHTML = '';
-            
-            if(data.found) {
-                const div = document.createElement('div');
-                div.className = 'result-item';
-                div.innerHTML = `<img src="${data.avatar}" class="avatar-sm"> 
-                                 <div><b>${data.username}</b><br><small style="color:#94a3b8">${data.bio || 'Hey there!'}</small></div>`;
-                div.onclick = () => {
-                    if(data.username === me.username) return;
-                    requestChat(data.username);
-                };
-                resDiv.appendChild(div);
-            } else {
-                resDiv.innerHTML = '<div style="padding:10px; color:#94a3b8">User not found</div>';
-            }
-        });
-
-        function requestChat(targetUser) {
-            if(confirm(`Send message request to ${targetUser}?`)) {
-                socket.emit('send-request', { sender: me.username, target: targetUser });
-            }
-        }
-
-        socket.on('req-feedback', msg => alert(msg));
-
-        // --- 3. Friends List Logic ---
-        function loadFriendsList(friends, requests) {
-            const list = document.getElementById('friends-list');
-            list.innerHTML = '';
-            
-            if(requests.length > 0) {
-                 requests.forEach(req => {
-                    const div = document.createElement('div');
-                    div.className = 'result-item';
-                    div.style.background = '#334155';
-                    div.innerHTML = `<div style="flex:1"><b>${req}</b> wants to chat</div> 
-                                     <button onclick="acceptReq('${req}')" style="background:#2dd4bf; border:none; padding:5px 10px; border-radius:5px;">Accept</button>`;
-                    list.appendChild(div);
-                });
-            }
-
-            if(friends.length === 0 && requests.length === 0) {
-                list.innerHTML = '<div style="text-align:center; padding:20px; color:#64748b;">No friends yet.<br>Search users to connect!</div>';
-            } else {
-                friends.forEach(f => {
-                    const div = document.createElement('div');
-                    div.className = 'result-item';
-                    div.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar-sm"> 
-                                     <div style="flex:1"><b>${f}</b><br><small style="color:#94a3b8">Tap to chat</small></div>
-                                     <i class="fas fa-comment-dots" style="color:#64748b"></i>`;
-                    div.onclick = () => startChat(f);
-                    list.appendChild(div);
-                });
-            }
-        }
-
-        function acceptReq(friend) { socket.emit('accept-request', { myName: me.username, friendName: friend }); }
+        let content = msg.text || '';
+        if(msg.voice) content = `<div class="voice-player" onclick="new Audio('${msg.voice}').play()"><i class="fas fa-play"></i> Voice Message</div>`;
         
-        socket.on('new-request', () => location.reload());
-        socket.on('friend-added', () => location.reload());
-
-        // --- 4. Chat System ---
-        function startChat(friendName) {
-            document.getElementById('main-view').style.display = 'none';
-            document.getElementById('chat-view').style.display = 'flex';
-            document.getElementById('chat-name').innerText = friendName;
-            document.getElementById('chat-dp').src = "https://cdn-icons-png.flaticon.com/512/149/149071.png"; 
-            document.getElementById('chat-box').innerHTML = '';
-            
-            currentRoom = [me.username, friendName].sort().join('-');
-            socket.emit('join-chat', { roomID: currentRoom });
-        }
-
-        function closeChat() {
-            document.getElementById('chat-view').style.display = 'none';
-            document.getElementById('main-view').style.display = 'block';
-            currentRoom = null;
-        }
-
-        function handleTyping() {
-            socket.emit('typing', { roomID: currentRoom, sender: me.username });
-            clearTimeout(typingTimer);
-            typingTimer = setTimeout(() => socket.emit('stop-typing', { roomID: currentRoom }), 1000);
-        }
-
-        socket.on('display-typing', () => document.getElementById('typing-ind').style.visibility = 'visible');
-        socket.on('hide-typing', () => document.getElementById('typing-ind').style.visibility = 'hidden');
-
-        function sendMsg(fileData = null) {
-            const text = document.getElementById('msg-input').value;
-            if(!text && !fileData) return;
-            
-            socket.emit('private-message', {
-                roomID: currentRoom,
-                sender: me.username,
-                text: text,
-                file: fileData
-            });
-            document.getElementById('msg-input').value = '';
-        }
-
-        function uploadPhoto(input) {
-            const file = input.files[0];
-            if(!file) return;
-            if(file.size > 2 * 1024 * 1024) return alert('Max 2MB allowed!');
-            
-            const reader = new FileReader();
-            reader.onload = () => sendMsg(reader.result);
-            reader.readAsDataURL(file);
-        }
-
-let mediaRecorder;
-let audioChunks = [];
-
-// ১. অনলাইন স্ট্যাটাস চেক
-socket.on('user-online-status', (users) => {
-    const statusText = document.getElementById('chat-status');
-    const chatTitle = document.getElementById('chat-name').innerText;
-    
-    if (users.includes(chatTitle)) {
-        statusText.innerHTML = `<span class="online-dot"></span> Online`;
-        document.getElementById('voice-btn').style.opacity = "1"; // অনলাইন থাকলে ভয়েস অন
-    } else {
-        statusText.innerHTML = `<span class="offline-text">Offline</span>`;
-        document.getElementById('voice-btn').style.opacity = "0.3"; // অফলাইন থাকলে ঘোলা
-    }
-});
-
-// ২. ভয়েস রেকর্ডিং (অনলাইন থাকলে কাজ করবে)
-async function toggleVoice() {
-    const chatTitle = document.getElementById('chat-name').innerText;
-    // এখানে সার্ভার থেকে আসা অনলাইন লিস্ট চেক করতে হবে (Global variable users থেকে)
-    if (document.getElementById('chat-status').innerText.includes('Offline')) {
-        alert("User is offline! Voice messages only allowed when online.");
-        return;
-    }
-
-    if (!mediaRecorder || mediaRecorder.state === "inactive") {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.start();
-        document.getElementById('voice-btn').classList.add('mic-active');
+        const tick = msg.sender === me.username ? `<i class="fas fa-check tick ${msg.seen?'seen':''}"></i>` : '';
+        div.innerHTML = `${content} <br> <small style="font-size:9px; opacity:0.7">${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} ${tick}</small>`;
         
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
-            const reader = new FileReader();
-            reader.readAsDataURL(audioBlob);
-            reader.onloadend = () => {
-                socket.emit('private-message', { roomID: currentRoom, sender: me.username, voice: reader.result });
-            };
-            audioChunks = [];
-        };
-    } else {
-        mediaRecorder.stop();
-        document.getElementById('voice-btn').classList.remove('mic-active');
-    }
-}
+        document.getElementById('chat-box').appendChild(div);
+        document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
+        if(msg.sender !== me.username) document.getElementById('notif-sound').play();
+    });
 
-// ৩. ডাবল টিক ডিসপ্লে
-function displayMessage(msg) {
-    const tickClass = msg.status === 'seen' ? 'fa-check-double seen' : 'fa-check';
-    const tickHtml = msg.sender === me.username ? `<i id="tick-${msg._id}" class="fas ${tickClass} tick"></i>` : '';
-    
-    // মেসেজ রেন্ডার করার সময় সিন চেক
-    if (msg.sender !== me.username && msg.status !== 'seen') {
-        socket.emit('message-seen', { msgId: msg._id, roomID: currentRoom });
+    function startChat(name) {
+        document.getElementById('chat-view').style.display = 'flex';
+        document.getElementById('chat-name').innerText = name;
+        document.getElementById('chat-box').innerHTML = '';
+        currentRoom = [me.username, name].sort().join('-');
+        socket.emit('join-chat', { roomID: currentRoom });
     }
+
+    function closeChat() { document.getElementById('chat-view').style.display = 'none'; }
+    function logout() { localStorage.clear(); location.reload(); }
     
-    // ভয়েস মেসেজ হলে অডিও প্লেয়ার দেখাবে
-    let content = msg.text || "";
-    if (msg.voice) content = `<div class="voice-msg"><i class="fas fa-play"></i> Voice Message</div>`;
-    
-    // ... আপনার আগের মেসেজ রেন্ডারিং কোড এর সাথে tickHtml যোগ করুন
-}
-        socket.on('receive-message', (msg) => {
+    // UI Helpers
+    function renderFriends(friends) {
+        const list = document.getElementById('friends-list');
+        list.innerHTML = friends.length ? '' : 'No friends yet.';
+        friends.forEach(f => {
             const div = document.createElement('div');
-            div.className = `msg ${msg.sender === me.username ? 'msg-me' : 'msg-friend'}`;
-            
-            let content = '';
-            if(msg.file) content += `<img src="${msg.file}"><br>`;
-            if(msg.text) content += `<span>${msg.text}</span>`;
-            
-            div.innerHTML = content + `<br><small style="font-size:9px; opacity:0.6">${new Date(msg.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small>`;
-            
-            document.getElementById('chat-box').appendChild(div);
-            document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
-
-            if(msg.sender !== me.username) {
-                document.getElementById('notif-sound').play().catch(e => {});
-            }
+            div.style = "padding:10px; background:var(--card); margin-bottom:5px; border-radius:10px;";
+            div.innerHTML = `<b>${f}</b>`;
+            div.onclick = () => startChat(f);
+            list.appendChild(div);
         });
-
-        socket.on('load-messages', (msgs) => {
-            msgs.forEach(msg => {
-                const div = document.createElement('div');
-                div.className = `msg ${msg.sender === me.username ? 'msg-me' : 'msg-friend'}`;
-                let content = '';
-                if(msg.file) content += `<img src="${msg.file}"><br>`;
-                if(msg.text) content += `<span>${msg.text}</span>`;
-                div.innerHTML = content;
-                document.getElementById('chat-box').appendChild(div);
-            });
-            document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
-        });
-let mediaRecorder;
-let audioChunks = [];
-
-// ১. অনলাইন স্ট্যাটাস চেক
-socket.on('user-online-status', (users) => {
-    const statusText = document.getElementById('chat-status');
-    const chatTitle = document.getElementById('chat-name').innerText;
-    
-    if (users.includes(chatTitle)) {
-        statusText.innerHTML = `<span class="online-dot"></span> Online`;
-        document.getElementById('voice-btn').style.opacity = "1"; // অনলাইন থাকলে ভয়েস অন
-    } else {
-        statusText.innerHTML = `<span class="offline-text">Offline</span>`;
-        document.getElementById('voice-btn').style.opacity = "0.3"; // অফলাইন থাকলে ঘোলা
     }
-});
-    </script>
+</script>
 </body>
 </html>
+
+
+
