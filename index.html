@@ -1,277 +1,502 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Secure Private Chat</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pro Chat App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        body { margin: 0; font-family: sans-serif; background: #121212; color: white; overflow: hidden; }
-        
-        /* স্ক্রিন কন্ট্রোল */
-        .screen { display: none; height: 100vh; flex-direction: column; }
-        .active { display: flex; }
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --text-light: #f8fafc;
+            --text-gray: #94a3b8;
+            --my-msg-bg: #3b82f6;
+            --other-msg-bg: #334155;
+            --danger: #ef4444;
+        }
 
-        /* ১. লগইন স্ক্রিন */
-        #login-screen { justify-content: center; align-items: center; padding: 20px; }
-        input, button { padding: 10px; margin: 10px 0; width: 100%; max-width: 300px; border-radius: 5px; border: none; }
-        input { background: #333; color: white; }
-        button { background: #007bff; color: white; cursor: pointer; font-weight: bold; }
-        .toggle-btn { background: none; color: #007bff; text-decoration: underline; cursor: pointer; margin-top: 10px; }
-
-        /* ২. ড্যাশবোর্ড (লিস্ট) */
-        #dashboard-screen { padding: 10px; }
-        .header { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #1e1e1e; }
-        .my-dp { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #007bff; }
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
         
-        .section-title { margin-top: 20px; color: #888; font-size: 14px; text-transform: uppercase; }
-        .user-list { list-style: none; padding: 0; }
-        .user-list li { padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .user-list li:hover { background: #1e1e1e; }
-        
-        /* ৩. চ্যাট স্ক্রিন */
-        #chat-header { padding: 15px; background: #1e1e1e; display: flex; align-items: center; }
-        #back-btn { margin-right: 15px; background: none; color: white; font-size: 20px; width: auto; padding: 0; }
-        #chat-messages { flex-grow: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        
-        .message { padding: 8px 15px; border-radius: 20px; max-width: 75%; word-wrap: break-word; font-size: 14px; }
-        .my-msg { background: #007bff; align-self: flex-end; }
-        .other-msg { background: #333; align-self: flex-start; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+        }
 
-        #chat-form { display: flex; padding: 10px; background: #1e1e1e; }
-        #msg-input { flex-grow: 1; margin: 0 10px 0 0; }
-        #send-btn { width: auto; margin: 0; }
+        /* মোবাইল অ্যাপ কন্টেইনার */
+        #app-container {
+            width: 100%;
+            max-width: 480px; /* ডেস্কটপে মোবাইলের মতো দেখাবে */
+            background: var(--bg-color);
+            height: 100%;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
 
-        /* ইউটিলিটি */
-        .hidden { display: none; }
-        #file-input { display: none; }
-        label[for="file-input"] { display: block; background: #333; padding: 10px; text-align: center; border-radius: 5px; cursor: pointer; max-width: 300px; margin: 10px auto; }
+        /* স্ক্রিন ট্রানজিশন */
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 10;
+        }
+        .screen.active { transform: translateX(0); z-index: 20; }
+        
+        /* 1. লগইন স্ক্রিন */
+        #login-screen {
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            text-align: center;
+        }
+        .logo-area { margin-bottom: 40px; }
+        .logo-icon { font-size: 60px; color: var(--primary); margin-bottom: 10px; }
+        .app-title { font-size: 24px; font-weight: 600; letter-spacing: 1px; }
+        
+        .input-group { width: 100%; margin-bottom: 15px; position: relative; }
+        .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-gray); }
+        input {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            background: var(--card-bg);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        input:focus { border-color: var(--primary); }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .link-text { margin-top: 20px; color: var(--text-gray); font-size: 14px; cursor: pointer; }
+        .link-text span { color: var(--primary); font-weight: 600; }
+
+        /* প্রোফাইল আপলোড */
+        .upload-wrapper { position: relative; width: 100px; height: 100px; margin: 0 auto 20px; }
+        .profile-preview { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); }
+        .camera-icon {
+            position: absolute; bottom: 0; right: 0;
+            background: var(--primary); padding: 8px;
+            border-radius: 50%; font-size: 14px; cursor: pointer;
+        }
+
+        /* 2. ড্যাশবোর্ড */
+        .header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #334155;
+            z-index: 50;
+        }
+        .header h2 { font-size: 20px; font-weight: 600; }
+        .mini-profile { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); }
+
+        .search-bar { padding: 15px; }
+        .search-box {
+            display: flex; background: var(--card-bg);
+            border-radius: 10px; padding: 10px; align-items: center;
+        }
+        .search-box input { border: none; padding: 5px 10px; background: transparent; height: auto; }
+        .add-btn { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 8px; margin-left: 10px; font-size: 20px; cursor: pointer;}
+
+        .list-container { flex: 1; overflow-y: auto; padding: 0 15px; }
+        .section-label { color: var(--text-gray); font-size: 12px; margin: 15px 0 5px; text-transform: uppercase; font-weight: 600; }
+        
+        .user-item {
+            display: flex; align-items: center;
+            background: var(--card-bg);
+            padding: 12px; margin-bottom: 10px;
+            border-radius: 12px; cursor: pointer;
+            transition: 0.2s;
+        }
+        .user-item:active { transform: scale(0.98); background: #334155; }
+        .user-avatar { width: 50px; height: 50px; border-radius: 50%; margin-right: 15px; object-fit: cover; background: #333; }
+        .user-info { flex: 1; }
+        .user-name { font-weight: 600; font-size: 16px; margin-bottom: 3px; }
+        .user-status { font-size: 13px; color: var(--text-gray); }
+        .action-btn { padding: 6px 12px; border-radius: 6px; border: none; font-size: 12px; cursor: pointer; margin-left: 5px; }
+        .btn-accept { background: var(--primary); color: white; }
+
+        /* 3. চ্যাট স্ক্রিন */
+        .chat-header {
+            display: flex; align-items: center; padding: 15px;
+            background: var(--card-bg); border-bottom: 1px solid #334155;
+        }
+        .back-btn { background: none; border: none; color: white; font-size: 20px; margin-right: 15px; cursor: pointer; }
+        
+        .chat-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        
+        .message { max-width: 75%; padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.4; position: relative; word-wrap: break-word; }
+        .my-msg {
+            align-self: flex-end;
+            background: var(--my-msg-bg);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .other-msg {
+            align-self: flex-start;
+            background: var(--other-msg-bg);
+            color: var(--text-light);
+            border-bottom-left-radius: 4px;
+        }
+        .msg-time { font-size: 10px; opacity: 0.7; display: block; text-align: right; margin-top: 5px; }
+
+        .chat-input-area {
+            padding: 15px; background: var(--card-bg);
+            display: flex; align-items: center; border-top: 1px solid #334155;
+        }
+        .chat-input { flex: 1; background: var(--bg-color); border: none; padding: 12px; border-radius: 20px; color: white; margin-right: 10px; }
+        .send-btn {
+            background: var(--primary); color: white; border: none;
+            width: 45px; height: 45px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 18px; cursor: pointer;
+        }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-
+    <div id="app-container">
+    
     <div id="login-screen" class="screen active">
-        <h2 id="auth-title">Login</h2>
-        <div id="preview-container" class="hidden">
-            <img id="preview-dp" src="" class="my-dp" style="width: 80px; height: 80px; margin: 0 auto; display: block;">
+        <div class="logo-area">
+            <i class="fa-solid fa-comments logo-icon"></i>
+            <h1 class="app-title">Secret Chat</h1>
+            <p style="color:var(--text-gray); font-size:14px;">Secure & Private Messaging</p>
         </div>
-        <label for="file-input" id="upload-label" class="hidden">Upload DP (Click Here)</label>
-        <input type="file" id="file-input" accept="image/*">
+
+        <div id="avatar-section" class="hidden">
+            <div class="upload-wrapper" onclick="document.getElementById('file-input').click()">
+                <img id="preview-dp" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="profile-preview">
+                <div class="camera-icon"><i class="fa-solid fa-camera"></i></div>
+            </div>
+            <input type="file" id="file-input" accept="image/*" hidden>
+        </div>
+
+        <div class="input-group">
+            <i class="fa-solid fa-user"></i>
+            <input type="text" id="username" placeholder="Username">
+        </div>
+        <div class="input-group">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" id="password" placeholder="Password">
+        </div>
+
+        <button class="btn" id="auth-btn" onclick="handleAuth()">Login</button>
         
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password">
-        <button id="auth-btn" onclick="handleAuth()">Login</button>
-        <p class="toggle-btn" onclick="toggleAuthMode()">Create New Account</p>
+        <p class="link-text" onclick="toggleAuthMode()">
+            <span id="toggle-text">Don't have an account? Sign Up</span>
+        </p>
     </div>
 
     <div id="dashboard-screen" class="screen">
         <div class="header">
-            <h3>My Chats</h3>
-            <img id="my-nav-dp" src="" class="my-dp">
+            <h2>Chats</h2>
+            <img id="my-nav-dp" src="" class="mini-profile">
         </div>
 
-        <div style="display: flex; gap: 5px;">
-            <input type="text" id="search-user" placeholder="Search username...">
-            <button onclick="sendRequest()" style="width: 80px;">Add</button>
+        <div class="search-bar">
+            <div class="search-box">
+                <i class="fa-solid fa-search" style="color:var(--text-gray)"></i>
+                <input type="text" id="search-user" placeholder="Search username...">
+                <button class="add-btn" onclick="sendRequest()"><i class="fa-solid fa-user-plus"></i></button>
+            </div>
         </div>
 
-        <div id="request-section" class="hidden">
-            <div class="section-title">Requests</div>
-            <ul id="request-list" class="user-list"></ul>
-        </div>
+        <div class="list-container">
+            <div id="request-section" class="hidden">
+                <div class="section-label">Requests</div>
+                <div id="request-list"></div>
+            </div>
 
-        <div class="section-title">Friends</div>
-        <ul id="friend-list" class="user-list"></ul>
+            <div class="section-label">Friends</div>
+            <div id="friend-list">
+                </div>
+        </div>
     </div>
 
     <div id="chat-screen" class="screen">
-        <div id="chat-header">
-            <button id="back-btn" onclick="goBack()">←</button>
-            <h3 id="chat-partner-name">User</h3>
+        <div class="chat-header">
+            <button class="back-btn" onclick="goBack()"><i class="fa-solid fa-arrow-left"></i></button>
+            <img id="chat-partner-dp" src="" class="mini-profile" style="margin-right:10px;">
+            <div style="flex:1;">
+                <h3 id="chat-partner-name" style="font-size:16px;">User</h3>
+                <span style="font-size:12px; color:var(--primary);">Online</span>
+            </div>
         </div>
-        <div id="chat-messages"></div>
-        <form id="chat-form">
-            <input id="msg-input" autocomplete="off" placeholder="Type a message..." />
-            <button id="send-btn">Send</button>
+
+        <div id="chat-messages" class="chat-area"></div>
+
+        <form id="chat-form" class="chat-input-area">
+            <input id="msg-input" class="chat-input" placeholder="Type a message..." autocomplete="off">
+            <button type="submit" class="send-btn"><i class="fa-solid fa-paper-plane"></i></button>
         </form>
     </div>
 
+    </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        let isLoginMode = true;
-        let myUsername = '';
-        let currentChatFriend = '';
-        let uploadedAvatar = 'https://cdn-icons-png.flaticon.com/512/149/149071.png'; // ডিফল্ট ছবি
+<script>
+    const socket = io();
+    let isLoginMode = true;
+    let myUsername = '';
+    let currentChatFriend = '';
+    let uploadedAvatar = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
-        // --- স্ক্রিন হ্যান্ডেলিং ---
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
+    // --- Screen Navigation ---
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
 
-        // --- ইমেজ আপলোড লজিক (Base64) ---
-        document.getElementById('file-input').addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    uploadedAvatar = e.target.result;
-                    document.getElementById('preview-dp').src = uploadedAvatar;
-                }
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // --- অথেনটিকেশন (Login/Signup) ---
-        function toggleAuthMode() {
-            isLoginMode = !isLoginMode;
-            document.getElementById('auth-title').innerText = isLoginMode ? 'Login' : 'Create Account';
-            document.getElementById('auth-btn').innerText = isLoginMode ? 'Login' : 'Sign Up';
-            document.querySelector('.toggle-btn').innerText = isLoginMode ? 'Create New Account' : 'Back to Login';
-            
-            // সাইন আপ হলে ছবি আপলোড দেখাবো
-            if (!isLoginMode) {
-                document.getElementById('upload-label').classList.remove('hidden');
-                document.getElementById('preview-container').classList.remove('hidden');
+    // --- Avatar Handling ---
+    document.getElementById('file-input').addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedAvatar = e.target.result;
                 document.getElementById('preview-dp').src = uploadedAvatar;
-            } else {
-                document.getElementById('upload-label').classList.add('hidden');
-                document.getElementById('preview-container').classList.add('hidden');
             }
+            reader.readAsDataURL(file);
         }
+    });
 
-        function handleAuth() {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            if (!username || !password) return alert("সব তথ্য পূরণ করুন!");
+    // --- Login/Signup Toggle ---
+    function toggleAuthMode() {
+        isLoginMode = !isLoginMode;
+        const title = document.querySelector('.app-title');
+        const btn = document.getElementById('auth-btn');
+        const toggleText = document.getElementById('toggle-text');
+        const avatarSec = document.getElementById('avatar-section');
 
-            if (isLoginMode) {
-                socket.emit('login', { username, password });
-            } else {
-                socket.emit('register', { username, password, avatar: uploadedAvatar });
-            }
+        if (isLoginMode) {
+            title.innerText = 'Welcome Back';
+            btn.innerText = 'Login';
+            toggleText.innerText = "Don't have an account? Sign Up";
+            avatarSec.classList.add('hidden');
+        } else {
+            title.innerText = 'Create Account';
+            btn.innerText = 'Sign Up';
+            toggleText.innerText = "Already have an account? Login";
+            avatarSec.classList.remove('hidden');
         }
+    }
 
-        socket.on('auth-success', (data) => {
-            myUsername = data.username;
-            document.getElementById('my-nav-dp').src = data.avatar || uploadedAvatar;
-            showScreen('dashboard-screen');
-            
-            // পুরনো বন্ধুদের লোড করা
-            updateFriendList(data.friends);
-            updateRequestList(data.requests);
-        });
-
-        socket.on('auth-error', (msg) => alert(msg));
-
-        // --- ফ্রেন্ড সিস্টেম ---
-        function sendRequest() {
-            const target = document.getElementById('search-user').value.trim();
-            if (target) {
-                socket.emit('send-request', target);
-                document.getElementById('search-user').value = '';
-            }
-        }
-
-        socket.on('request-error', (msg) => alert(msg));
-        socket.on('request-sent', (msg) => alert(msg));
+    // --- Authentication ---
+    function handleAuth() {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
         
-        socket.on('new-request', (fromUser) => {
-            alert(fromUser + " আপনাকে রিকোয়েস্ট পাঠিয়েছে!");
-            const list = document.getElementById('request-list');
-            addRequestItem(list, fromUser);
+        if (!username || !password) return alert("Please fill all fields");
+
+        const btn = document.getElementById('auth-btn');
+        btn.innerText = "Processing...";
+        
+        if (isLoginMode) {
+            socket.emit('login', { username, password });
+        } else {
+            socket.emit('register', { username, password, avatar: uploadedAvatar });
+        }
+    }
+
+    socket.on('auth-success', (data) => {
+        myUsername = data.username;
+        document.getElementById('my-nav-dp').src = data.avatar || uploadedAvatar;
+        
+        // Reset Button
+        document.getElementById('auth-btn').innerText = isLoginMode ? 'Login' : 'Sign Up';
+        
+        // Load Data
+        updateFriendList(data.friends);
+        updateRequestList(data.requests);
+        
+        showScreen('dashboard-screen');
+    });
+
+    socket.on('auth-error', (msg) => {
+        alert(msg);
+        document.getElementById('auth-btn').innerText = isLoginMode ? 'Login' : 'Sign Up';
+    });
+
+    // --- Requests ---
+    function sendRequest() {
+        const target = document.getElementById('search-user').value.trim();
+        if(target) {
+            socket.emit('send-request', { sender: myUsername, target: target });
+            document.getElementById('search-user').value = '';
+        }
+    }
+
+    socket.on('request-sent', () => alert("Request sent successfully!"));
+    socket.on('request-error', (msg) => alert(msg));
+
+    socket.on('new-request', (senderName) => {
+        const list = document.getElementById('request-list');
+        document.getElementById('request-section').classList.remove('hidden');
+        
+        const div = document.createElement('div');
+        div.className = 'user-item';
+        div.innerHTML = `
+            <div class="user-avatar"></div>
+            <div class="user-info">
+                <div class="user-name">${senderName}</div>
+                <div class="user-status">Sent you a request</div>
+            </div>
+            <button class="action-btn btn-accept" onclick="acceptReq('${senderName}')">Accept</button>
+        `;
+        list.appendChild(div);
+    });
+
+    function acceptReq(friendName) {
+        socket.emit('accept-request', { myName: myUsername, friendName: friendName });
+        document.getElementById('request-section').classList.add('hidden'); 
+    }
+
+    // --- Friend List ---
+    function updateFriendList(friends) {
+        const list = document.getElementById('friend-list');
+        list.innerHTML = '';
+        friends.forEach(name => {
+            const div = document.createElement('div');
+            div.className = 'user-item';
+            div.onclick = () => startChat(name);
+            div.innerHTML = `
+                <img src="https://ui-avatars.com/api/?name=${name}&background=random" class="user-avatar">
+                <div class="user-info">
+                    <div class="user-name">${name}</div>
+                    <div class="user-status">Tap to chat</div>
+                </div>
+                <i class="fa-solid fa-chevron-right" style="color:var(--text-gray); font-size:12px;"></i>
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    function updateRequestList(requests) {
+        const list = document.getElementById('request-list');
+        list.innerHTML = '';
+        
+        if (requests && requests.length > 0) {
             document.getElementById('request-section').classList.remove('hidden');
-        });
-
-        function addRequestItem(list, name) {
-            const li = document.createElement('li');
-            li.innerHTML = `${name} <button style="width:auto; padding:5px 10px; font-size:12px;" onclick="accept('${name}')">Accept</button>`;
-            list.appendChild(li);
-        }
-
-        function accept(name) {
-            socket.emit('accept-request', name);
-            // লিস্ট থেকে সরিয়ে ফেলা
-            const list = document.getElementById('request-list');
-            // সিম্পল রিলোড বা রিমুভ লজিক (সহজের জন্য আমরা পরে লিস্ট আপডেট করি)
-            list.innerHTML = ''; 
-        }
-
-        socket.on('friend-added', (name) => {
-            const list = document.getElementById('friend-list');
-            const li = document.createElement('li');
-            li.textContent = name;
-            li.onclick = () => startChat(name);
-            list.appendChild(li);
-        });
-
-        function updateFriendList(friends) {
-            const list = document.getElementById('friend-list');
-            list.innerHTML = '';
-            friends.forEach(name => {
-                const li = document.createElement('li');
-                li.textContent = name;
-                li.onclick = () => startChat(name);
-                list.appendChild(li);
-            });
-        }
-
-        function updateRequestList(requests) {
-            const list = document.getElementById('request-list');
-            list.innerHTML = '';
-            if(requests && requests.length > 0) {
-                document.getElementById('request-section').classList.remove('hidden');
-                requests.forEach(name => addRequestItem(list, name));
-            }
-        }
-
-        // --- চ্যাট সিস্টেম ---
-        function startChat(friendName) {
-            currentChatFriend = friendName;
-            document.getElementById('chat-partner-name').innerText = friendName;
-            document.getElementById('chat-messages').innerHTML = ''; // ক্লিয়ার
-            socket.emit('join-chat', friendName);
-            showScreen('chat-screen');
-        }
-
-        function goBack() {
-            showScreen('dashboard-screen');
-            currentChatFriend = '';
-        }
-
-        document.getElementById('chat-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const input = document.getElementById('msg-input');
-            if (input.value && currentChatFriend) {
-                socket.emit('private-message', { friendName: currentChatFriend, msg: input.value });
-                input.value = '';
-            }
-        });
-
-        socket.on('receive-message', (data) => {
-            // যদি আমি চ্যাট স্ক্রিনে থাকি এবং এই মানুষের সাথেই কথা বলছি
-            if (currentChatFriend && (data.sender === currentChatFriend || data.sender === myUsername)) {
+            requests.forEach(name => {
                 const div = document.createElement('div');
-                div.classList.add('message');
-                div.classList.add(data.sender === myUsername ? 'my-msg' : 'other-msg');
-                div.textContent = data.text;
-                document.getElementById('chat-messages').appendChild(div);
-                document.getElementById('chat-messages').scrollTo(0, 99999);
-            }
-        });
-
-        socket.on('load-messages', (msgs) => {
-            const container = document.getElementById('chat-messages');
-            container.innerHTML = '';
-            msgs.forEach(data => {
-                const div = document.createElement('div');
-                div.classList.add('message');
-                div.classList.add(data.sender === myUsername ? 'my-msg' : 'other-msg');
-                div.textContent = data.text;
-                container.appendChild(div);
+                div.className = 'user-item';
+                div.innerHTML = `
+                    <img src="https://ui-avatars.com/api/?name=${name}&background=random" class="user-avatar">
+                    <div class="user-info">
+                        <div class="user-name">${name}</div>
+                        <div class="user-status">Wants to chat</div>
+                    </div>
+                    <button class="action-btn btn-accept" onclick="acceptReq('${name}')">Accept</button>
+                `;
+                list.appendChild(div);
             });
-            container.scrollTo(0, 99999);
-        });
+        } else {
+            document.getElementById('request-section').classList.add('hidden');
+        }
+    }
 
-    </script>
+    socket.on('friend-added', (friendName) => {
+        const list = document.getElementById('friend-list');
+        const div = document.createElement('div');
+        div.className = 'user-item';
+        div.onclick = () => startChat(friendName);
+        div.innerHTML = `
+            <img src="https://ui-avatars.com/api/?name=${friendName}&background=random" class="user-avatar">
+            <div class="user-info">
+                <div class="user-name">${friendName}</div>
+                <div class="user-status">New Friend</div>
+            </div>
+        `;
+        list.appendChild(div);
+    });
+
+    // --- Chat Logic ---
+    function startChat(name) {
+        currentChatFriend = name;
+        document.getElementById('chat-partner-name').innerText = name;
+        document.getElementById('chat-partner-dp').src = `https://ui-avatars.com/api/?name=${name}&background=random`;
+        document.getElementById('chat-messages').innerHTML = ''; 
+        
+        socket.emit('join-chat', { user1: myUsername, user2: name });
+        showScreen('chat-screen');
+    }
+
+    function goBack() {
+        showScreen('dashboard-screen');
+        currentChatFriend = '';
+    }
+
+    document.getElementById('chat-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('msg-input');
+        const text = input.value.trim();
+        
+        if (text && currentChatFriend) {
+            appendMessage({ sender: myUsername, text: text, createdAt: new Date() });
+            socket.emit('private-message', { sender: myUsername, friendName: currentChatFriend, msg: text });
+            input.value = '';
+        }
+    });
+
+    socket.on('receive-message', (data) => {
+        if (currentChatFriend && (data.sender === currentChatFriend)) {
+            appendMessage(data);
+        }
+    });
+
+    socket.on('load-messages', (msgs) => {
+        const container = document.getElementById('chat-messages');
+        container.innerHTML = '';
+        msgs.forEach(appendMessage);
+    });
+
+    function appendMessage(data) {
+        const container = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        const isMe = data.sender === myUsername;
+        
+        div.className = `message ${isMe ? 'my-msg' : 'other-msg'}`;
+        div.innerHTML = `
+            ${data.text}
+            <span class="msg-time">${new Date(data.createdAt || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+        `;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+</script>
 </body>
 </html>
