@@ -1,17 +1,14 @@
 {
-  "name": "chat-app",
+  "name": "ultima-29-card-game",
   "version": "1.0.0",
-  "description": "Professional Chat App",
+  "description": "Advanced 29 Card Game with Betting and Spectator Mode",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "socket.io": "^4.7.5",
-    "mongoose": "^8.0.0"
-  },
-  "engines": {
-    "node": ">=16.0.0"
+    "socket.io": "^4.7.2",
+    "mongoose": "^7.5.0"
   }
 }
