@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultima 29 Pro - PRITAM</title>
+    <title>Ultima 29 Pro Max - PRITAM</title>
     <script src="/socket.io/socket.io.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --gold: #ffcc00; --felt: #074a1d; --border: #3d2b1f; }
+        :root { --gold: #ffcc00; --felt: #074a1d; --border: #3d2b1f; --inr: #22c55e; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background: #020617; color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         .hidden { display: none !important; }
@@ -29,11 +29,18 @@
         
         .pfp-img { width: 60px; height: 60px; border-radius: 15px; border: 3px solid var(--gold); background: #111; object-fit: cover; }
         .p-name { font-size: 11px; font-weight: bold; color: var(--gold); margin-top: 5px; background: rgba(0,0,0,0.7); padding: 2px 5px; border-radius: 5px; }
-        <body>
+
+        /* Card Mechanics */
+        .card-29 { width: 55px; height: 80px; background: white; border-radius: 8px; color: black; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; position: absolute; cursor: pointer; transition: 0.2s; box-shadow: 0 5px 10px rgba(0,0,0,0.3); }
+        .card-29:hover { transform: translateY(-20px); z-index: 100; border: 2px solid var(--gold); }
+        .suit-red { color: #e11d48; }
+    </style>
+</head>
+<body>
     <div id="lobby-view" style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background: radial-gradient(circle, #1e1b4b, #020617);">
         <h1 style="color: var(--gold); font-size: 3.5rem; margin-bottom: 20px;">ULTIMA 29</h1>
         <div style="background: rgba(30, 41, 59, 0.9); padding: 40px; border-radius: 25px; width: 90%; max-width: 380px; text-align: center;">
-            <input type="text" id="user-name-in" placeholder="Enter Rocket Pilot Name" style="width:100%; padding:15px; border-radius:12px; border:none; margin-bottom:20px; background:#111; color:white;">
+            <input type="text" id="user-name-in" placeholder="Enter Pilot Name" style="width:100%; padding:15px; border-radius:12px; border:none; margin-bottom:20px; background:#111; color:white; border:1px solid #334155;">
             <button onclick="launchGame()" style="width:100%; padding:18px; background:var(--gold); border:none; border-radius:12px; font-weight:900; cursor:pointer; font-size: 1.1rem;">PLAY NOW (INR)</button>
             <p style="margin-top:20px; font-size:12px; opacity:0.6; font-weight: bold;">DEVELOPED BY PRITAM</p>
         </div>
@@ -52,37 +59,37 @@
                 <div class="player-slot pos-right"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="pfp-img"><div class="p-name" id="name-3">BOT 3</div></div>
                 
                 <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center;">
-                    <span style="font-size:10px; opacity:0.5;">POT INR</span><br>
                     <div style="font-size:28px; color:var(--gold); font-weight:900;">₹<span id="pot-inr">0</span></div>
+                    <span style="font-size:10px; opacity:0.5; font-weight:bold;">TOTAL POT (INR)</span>
                 </div>
+
+                <div id="my-hand" style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); width:320px; height:80px; display:flex; justify-content:center;"></div>
             </div>
         </div>
         
         <div style="height:100px; background:#000; display:flex; align-items:center; justify-content:center; gap:15px; border-top:1px solid #333;">
-            <button onclick="placeBet(50)" style="background:#4caf50; padding:12px; border-radius:50%; border:none; font-weight:bold;">₹50</button>
-            <button onclick="placeBet(100)" style="background:#e91e63; padding:12px; border-radius:50%; border:none; font-weight:bold;">₹100</button>
-            <button onclick="placeBet(5000)" style="background:var(--gold); padding:12px; border-radius:50%; border:none; font-weight:bold; color:black;">₹5K</button>
+            <button onclick="placeBet(100)" style="background:#e91e63; padding:12px 20px; border-radius:30px; border:none; font-weight:bold; color:white; cursor:pointer;">₹100</button>
+            <button onclick="placeBet(500)" style="background:#2196f3; padding:12px 20px; border-radius:30px; border:none; font-weight:bold; color:white; cursor:pointer;">₹500</button>
+            <button onclick="placeBet(5000)" style="background:var(--gold); padding:12px 20px; border-radius:30px; border:none; font-weight:bold; color:black; cursor:pointer;">₹5K</button>
         </div>
     </div>
-        <script>
+<script>
     const socket = io();
     let wallet = 5000;
-    let myName = "";
+    let roomID = "ROCKET-01";
 
     function launchGame() {
         const input = document.getElementById('user-name-in').value.trim();
         if(!input) return alert("Identify yourself, Pilot!");
         
-        myName = input;
         document.getElementById('lobby-view').classList.add('hidden');
         const gView = document.getElementById('game-view');
         gView.classList.remove('hidden');
         gView.style.display = 'flex';
 
-        // সার্ভারে কানেক্ট করা
         socket.emit('join-table', { 
-            tableID: "ROCKET-01", 
-            username: myName, 
+            tableID: roomID, 
+            username: input, 
             role: 'player', 
             coins: wallet 
         });
@@ -92,29 +99,43 @@
         if(wallet < amt) return alert("Insufficient INR balance!");
         wallet -= amt;
         document.getElementById('inr-wallet').innerText = wallet;
-        socket.emit('place-bet', { tableID: "ROCKET-01", amount: amt });
+        socket.emit('place-bet', { tableID: roomID, amount: amt });
     }
 
-    // ৪ জন না হলে বট দিয়ে ফিল করার লজিক (Table Update)
     socket.on('table-update', (data) => {
         document.getElementById('spec-info').innerText = `Spectators: ${data.spectators.length}`;
-        
-        // প্লেয়ারদের নাম বসানো
         data.players.forEach((p, i) => {
-            const nameLabel = document.getElementById(`name-${i}`);
-            if(nameLabel) nameLabel.innerText = p.username;
+            const label = document.getElementById(`name-${i}`);
+            if(label) label.innerText = p.username;
         });
+    });
 
-        // যদি প্লেয়ার সংখ্যা ৪-এর কম হয়, বাকিগুলো BOT হিসেবেই থাকবে (UI-তে আগে থেকেই BOT নাম দেওয়া আছে)
+    // কার্ড খেলার লজিক (Error Fix)
+    socket.on('deal-cards', (cards) => {
+        const hand = document.getElementById('my-hand');
+        hand.innerHTML = '';
+        cards.forEach((c, i) => {
+            const div = document.createElement('div');
+            const isRed = c.suit === '♥' || c.suit === '♦';
+            div.className = `card-29 ${isRed ? 'suit-red' : ''}`;
+            div.style.left = `${i * 35}px`;
+            div.innerHTML = `<span>${c.rank}</span><span>${c.suit}</span>`;
+            div.onclick = () => {
+                socket.emit('play-card', { roomID, card: c });
+                div.remove(); // কার্ডটি হাত থেকে সরিয়ে দেওয়া
+            };
+            hand.appendChild(div);
+        });
     });
 
     socket.on('bet-updated', (pot) => {
         document.getElementById('pot-inr').innerText = pot;
     });
 
-    // ১৫ মিনিট পর ডাটা ক্লিনিং কনসোল মেসেজ
-    console.log("Rocket System: Auto-delete 15m active for matches.");
+    window.onbeforeunload = () => "Game data will be lost!";
 </script>
 </body>
 </html>
-        
+
+
+
