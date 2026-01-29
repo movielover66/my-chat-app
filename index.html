@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultima 29 Pro - Developed by PRITAM</title>
+    <title>Ultima 29 Pro - By PRITAM</title>
     <script src="/socket.io/socket.io.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { 
-            --gold: #ffcc00; --felt: #0b4d22; --border: #5d4037; 
-            --chip-50: #4caf50; --chip-100: #e91e63; --chip-500: #2196f3; --chip-5000: #ff9800;
-        }
+        :root { --gold: #ffcc00; --felt: #0b4d22; --border: #5d4037; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
         body { background: #0a0a0a; color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        .hidden { display: none !important; }
+
+        /* Lobby Design */
+        #lobby-view { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1a1a1a, #000); }
+        .auth-card { background: #1e293b; padding: 30px; border-radius: 20px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,204,0,0.2); }
         
         /* Table Layout */
         .casino-floor { flex: 1; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
@@ -24,187 +26,166 @@
         }
 
         /* Player Slots */
-        .slot { position: absolute; width: 100px; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        .slot-top { top: -60px; left: 50%; transform: translateX(-50%); }
-        .slot-bottom { bottom: -60px; left: 50%; transform: translateX(-50%); }
-        .slot-left { left: -60px; top: 50%; transform: translateY(-50%); }
-        .slot-right { right: -60px; top: 50%; transform: translateY(-50%); }
+        .slot { position: absolute; width: 80px; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        .slot-top { top: -50px; left: 50%; transform: translateX(-50%); }
+        .slot-bottom { bottom: -50px; left: 50%; transform: translateX(-50%); }
+        .slot-left { left: -50px; top: 50%; transform: translateY(-50%); }
+        .slot-right { right: -50px; top: 50%; transform: translateY(-50%); }
         
-        .pfp { width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--gold); background: #222; object-fit: cover; }
-        .p-name { font-size: 12px; font-weight: bold; margin-top: 5px; background: rgba(0,0,0,0.7); padding: 2px 8px; border-radius: 10px; }
-
-        /* Card Styles */
-        .card { width: 55px; height: 80px; background: white; border-radius: 6px; border: 1px solid #ccc; color: black; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; position: absolute; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-        .card:hover { transform: translateY(-15px) rotate(5deg); z-index: 100; }
-        .card.red { color: #d32f2f; }
-        /* Betting Panel */
-        .bet-bar { height: 100px; background: #1a1a1a; display: flex; align-items: center; justify-content: center; gap: 15px; border-top: 2px solid var(--gold); }
-        .chip { width: 55px; height: 55px; border-radius: 50%; border: 4px dashed rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; cursor: pointer; transition: 0.2s; }
+        .pfp { width: 50px; height: 50px; border-radius: 50%; border: 3px solid var(--gold); background: #222; object-fit: cover; }
+        .p-name { font-size: 11px; font-weight: bold; margin-top: 5px; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 8px; color: var(--gold); }
+                /* Betting Panel */
+        .bet-bar { height: 90px; background: #111; display: flex; align-items: center; justify-content: center; gap: 12px; border-top: 2px solid var(--gold); }
+        .chip { width: 50px; height: 50px; border-radius: 50%; border: 4px dashed rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; cursor: pointer; transition: 0.2s; }
         .chip:active { transform: scale(0.9); }
-        .chip-50 { background: var(--chip-50); }
-        .chip-100 { background: var(--chip-100); }
-        .chip-500 { background: var(--chip-500); }
-        .chip-5000 { background: var(--chip-5000); color: black; }
+        .chip-50 { background: #4caf50; }
+        .chip-100 { background: #e91e63; }
+        .chip-500 { background: #2196f3; }
+        .chip-5000 { background: #ff9800; color: black; }
 
         /* Reactions */
-        .reaction-panel { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; }
-        .react-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--gold); color: white; padding: 10px; border-radius: 12px; cursor: pointer; font-size: 11px; }
+        .reaction-panel { position: fixed; right: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; }
+        .react-btn { background: rgba(0,0,0,0.6); border: 1px solid var(--gold); color: white; padding: 10px; border-radius: 12px; cursor: pointer; font-size: 10px; font-weight: bold; }
 
-        /* Pot & Info */
+        /* Pot Display */
         .pot-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
-        .pot-amount { font-size: 24px; color: var(--gold); font-weight: bold; text-shadow: 0 0 10px rgba(255,204,0,0.5); }
+        .pot-amount { font-size: 24px; color: var(--gold); font-weight: bold; text-shadow: 0 0 15px rgba(255,204,0,0.6); }
         
-        @keyframes floatEmoji { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-100px); } }
-        .emoji-fly { position: absolute; font-size: 40px; animation: floatEmoji 2s forwards; pointer-events: none; z-index: 1000; }
+        @keyframes floatEmoji { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-120px); } }
+        .emoji-fly { position: absolute; font-size: 40px; animation: floatEmoji 2.5s forwards; pointer-events: none; z-index: 1000; }
     </style>
 </head>
 <body>
-    <div id="lobby-view" style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <h1 style="color: var(--gold); font-size: 3rem; margin-bottom: 20px;">ULTIMA 29</h1>
-        <div style="background: #1e293b; padding: 30px; border-radius: 20px; width: 350px; text-align: center;">
-            <input type="text" id="p-name" placeholder="Enter Your Name" style="width:100%; padding:15px; border-radius:10px; border:none; margin-bottom:15px;">
+    <audio id="click-sound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.m4a"></audio>
+
+    <div id="lobby-view">
+        <h1 style="color: var(--gold); font-size: 3rem; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255,204,0,0.4);">ULTIMA 29</h1>
+        <div class="auth-card">
+            <input type="text" id="player-name-input" placeholder="Pilot Username" style="width:100%; padding:15px; border-radius:12px; border:none; margin-bottom:20px; background:#0f172a; color:white; outline:none; border: 1px solid #334155;">
             <div style="display: flex; gap: 10px;">
-                <button onclick="joinGame('player')" style="flex:1; padding:15px; background:var(--gold); border:none; border-radius:10px; font-weight:bold; cursor:pointer;">PLAY (PLAYER)</button>
-                <button onclick="joinGame('spectator')" style="flex:1; padding:15px; background:#475569; border:none; border-radius:10px; color:white; font-weight:bold; cursor:pointer;">WATCH</button>
+                <button onclick="startGame('player')" style="flex:1; padding:15px; background:var(--gold); border:none; border-radius:12px; font-weight:900; cursor:pointer; color:#000;">PLAY (PLAYER)</button>
+                <button onclick="startGame('spectator')" style="flex:1; padding:15px; background:#475569; border:none; border-radius:12px; color:white; font-weight:bold; cursor:pointer;">WATCH</button>
             </div>
-            <p style="margin-top:20px; font-size:12px; opacity:0.6;">Developed by PRITAM</p>
+            <p style="margin-top:20px; font-size:12px; opacity:0.6; font-weight:bold; letter-spacing:1px;">Developed by PRITAM</p>
         </div>
     </div>
 
     <div id="game-view" class="hidden" style="height: 100%; flex-direction: column;">
         <div style="padding:15px; background:#111; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333;">
-            <div id="wallet">Balance: ₹<span id="coins">5000</span></div>
-            <div id="room-id">TABLE: ROCKET-01</div>
-            <div id="player-count">Spectators: 0</div>
+            <div style="font-weight:bold; color:var(--gold);">WALLET: ₹<span id="coins-display">5000</span></div>
+            <div style="font-size:12px; font-weight:bold; opacity:0.8;">TABLE: ROCKET-01</div>
+            <div id="spectator-info" style="font-size:12px; color:#94a3b8;">Spectators: 0</div>
         </div>
 
         <div class="casino-floor">
             <div class="table-29">
-                <div class="slot slot-bottom" id="pos-0"><img src="" class="pfp"><span class="p-name">You</span></div>
-                <div class="slot slot-left" id="pos-1"><img src="" class="pfp"><span class="p-name">Pilot 1</span></div>
-                <div class="slot slot-top" id="pos-2"><img src="" class="pfp"><span class="p-name">Pilot 2</span></div>
-                <div class="slot slot-right" id="pos-3"><img src="" class="pfp"><span class="p-name">Pilot 3</span></div>
+                <div class="slot slot-bottom" id="slot-0"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="pfp"><span class="p-name" id="name-0">You</span></div>
+                <div class="slot slot-left" id="slot-1"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="pfp"><span class="p-name" id="name-1">Waiting...</span></div>
+                <div class="slot slot-top" id="slot-2"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="pfp"><span class="p-name" id="name-2">Waiting...</span></div>
+                <div class="slot slot-right" id="slot-3"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="pfp"><span class="p-name" id="name-3">Waiting...</span></div>
 
                 <div class="pot-box">
-                    <p style="font-size: 11px; opacity:0.6;">CURRENT POT</p>
-                    <div class="pot-amount">₹<span id="pot-val">0</span></div>
+                    <p style="font-size: 10px; opacity:0.6; font-weight:bold;">CURRENT POT</p>
+                    <div class="pot-amount">₹<span id="pot-value">0</span></div>
                 </div>
 
-                <div id="my-hand" style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); width:300px; height:80px; display:flex; justify-content:center;"></div>
-                <div id="trick-area" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:200px; height:150px;"></div>
+                <div id="player-hand" style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); width:320px; height:80px; display:flex; justify-content:center;"></div>
             </div>
         </div>
 
         <div class="reaction-panel">
-            <button class="react-btn" onclick="react('🍚')">MURI BAJI</button>
-            <button class="react-btn" onclick="react('🍟')">CHOP BAJI</button>
-            <button class="react-btn" onclick="react('😂')">FUNNY</button>
-            <button class="react-btn" onclick="react('😠')">ANGRY</button>
+            <button class="react-btn" onclick="sendReaction('🍚')">MURI BAJI</button>
+            <button class="react-btn" onclick="sendReaction('🍟')">CHOP BAJI</button>
+            <button class="react-btn" onclick="sendReaction('😂')">FUNNY</button>
+            <button class="react-btn" onclick="sendReaction('😠')">ANGRY</button>
         </div>
 
         <div class="bet-bar" id="betting-ui">
-            <div class="chip chip-50" onclick="bet(50)">50</div>
-            <div class="chip chip-100" onclick="bet(100)">100</div>
-            <div class="chip chip-500" onclick="bet(500)">500</div>
-            <div class="chip chip-5000" onclick="bet(5000)">5K</div>
+            <div class="chip chip-50" onclick="makeBet(50)">50</div>
+            <div class="chip chip-100" onclick="makeBet(100)">100</div>
+            <div class="chip chip-500" onclick="makeBet(500)">500</div>
+            <div class="chip chip-5000" onclick="makeBet(5000)">5K</div>
         </div>
     </div>
-<script>
+    <script>
     const socket = io();
-    let myCoins = 5000;
-    let role = 'player';
-    let myCards = [];
-    let tableID = "ROCKET-01";
+    let myBalance = 5000;
+    let myRole = 'player';
+    let myName = "";
+    let roomID = "ROCKET-01";
 
-    const suits = ['♠', '♥', '♣', '♦'];
-    const ranks = [
-        { r: 'J', p: 3 }, { r: '9', p: 2 }, { r: 'A', p: 1 }, 
-        { r: '10', p: 1 }, { r: 'K', p: 0 }, { r: 'Q', p: 0 }, 
-        { r: '8', p: 0 }, { r: '7', p: 0 }
-    ];
-
-    function joinGame(selectedRole) {
-        const name = document.getElementById('p-name').value.trim();
-        if(!name) return alert("Enter Name!");
-        role = selectedRole;
+    // বাটন ক্লিক ফাংশন
+    function startGame(roleType) {
+        const inputName = document.getElementById('player-name-input').value.trim();
+        if(!inputName) {
+            alert("Please enter your name first!");
+            return;
+        }
         
+        myName = inputName;
+        myRole = roleType;
+        
+        // শব্দ করবে
+        document.getElementById('click-sound').play().catch(e => {});
+
+        // ভিউ পরিবর্তন
         document.getElementById('lobby-view').classList.add('hidden');
         document.getElementById('game-view').style.display = 'flex';
         
-        socket.emit('join-table', { tableID, username: name, role, coins: myCoins });
-    }
-
-    function bet(amount) {
-        if(role !== 'player') return alert("Spectators can't bet!");
-        if(myCoins < amount) return alert("Not enough coins!");
-        
-        myCoins -= amount;
-        document.getElementById('coins').innerText = myCoins;
-        socket.emit('place-bet', { tableID, amount });
-    }
-
-    socket.on('bet-updated', (newPot) => {
-        document.getElementById('pot-val').innerText = newPot;
-    });
-
-    // কার্ড রেন্ডারিং
-    function renderHand(cards) {
-        const hand = document.getElementById('my-hand');
-        hand.innerHTML = '';
-        cards.forEach((c, i) => {
-            const div = document.createElement('div');
-            div.className = `card ${c.suit === '♥' || c.suit === '♦' ? 'red' : ''}`;
-            div.style.left = `${i * 35}px`;
-            div.innerHTML = `<span>${c.rank}</span><br><span>${c.suit}</span>`;
-            div.onclick = () => playCard(c);
-            hand.appendChild(div);
+        // সার্ভারে ডেটা পাঠানো
+        socket.emit('join-table', { 
+            tableID: roomID, 
+            username: myName, 
+            role: myRole, 
+            coins: myBalance 
         });
     }
-</script>
-<script>
-    function react(type) {
-        socket.emit('send-reaction', { tableID, reaction: type });
+
+    function makeBet(amount) {
+        if(myRole !== 'player') return alert("Spectators cannot bet!");
+        if(myBalance < amount) return alert("Not enough balance!");
+        
+        myBalance -= amount;
+        document.getElementById('coins-display').innerText = myBalance;
+        socket.emit('place-bet', { tableID: roomID, amount: amount });
+    }
+
+    socket.on('bet-updated', (newTotal) => {
+        document.getElementById('pot-value').innerText = newTotal;
+    });
+
+    socket.on('table-update', (data) => {
+        document.getElementById('spectator-info').innerText = `Spectators: ${data.spectators.length}`;
+        
+        // টেবিল আপডেট (প্লেয়ারদের নাম)
+        data.players.forEach((p, i) => {
+            const nameSlot = document.getElementById(`name-${i}`);
+            if(nameSlot) nameSlot.innerText = p.username;
+        });
+    });
+    </script>
+    <script>
+    function sendReaction(emoji) {
+        socket.emit('send-reaction', { tableID: roomID, reaction: emoji });
     }
 
     socket.on('new-reaction', ({ sender, reaction }) => {
-        const emoji = document.createElement('div');
-        emoji.className = 'emoji-fly';
-        emoji.innerText = reaction;
+        const emojiDiv = document.createElement('div');
+        emojiDiv.className = 'emoji-fly';
+        emojiDiv.innerText = reaction;
         
-        // র্যান্ডম পজিশন থেকে ইমোজি উড়বে
-        emoji.style.left = Math.random() * 80 + 10 + '%';
-        emoji.style.bottom = '100px';
+        // র্যান্ডম পজিশন থেকে উড়বে
+        emojiDiv.style.left = Math.random() * 80 + 10 + '%';
+        emojiDiv.style.bottom = '100px';
         
-        document.body.appendChild(emoji);
-        setTimeout(() => emoji.remove(), 2000);
+        document.body.appendChild(emojiDiv);
+        setTimeout(() => emojiDiv.remove(), 2500);
     });
 
-    // BOT AI লজিক (যদি ৪ জন প্লেয়ার না থাকে)
-    function botLogic() {
-        // বটের কাছে থাকা কার্ডগুলোর মধ্যে থেকে একটি র‍্যান্ডম কার্ড সিলেক্ট করা
-        // এবং নির্দিষ্ট সময়ে খেলা
-        console.log("Bot thinking...");
-    }
-
-    // টেবিল আপডেট (কতজন খেলছে বা দেখছে)
-    socket.on('table-update', (table) => {
-        document.getElementById('player-count').innerText = `Spectators: ${table.spectators.length}`;
-        // খেলোয়াড়দের প্রোফাইল ছবি আপডেট করা
-        table.players.forEach((p, i) => {
-            const slot = document.getElementById(`pos-${i}`);
-            if(slot) slot.querySelector('.p-name').innerText = p.username;
-        });
-    });
-
-    // ডাবল ট্যাপ করে লগ আউট বা রিফ্রেশ প্রোটেকশন
+    // রিফ্রেশ প্রোটেকশন
     window.onbeforeunload = function() {
-        return "Are you sure you want to leave the table?";
+        return "Leaving the game will reset your session!";
     };
 </script>
 </body>
 </html>
-
-
-
-
-
