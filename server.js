@@ -1,113 +1,39 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require("socket.io");
-const mongoose = require('mongoose');
+// server.js এর ভেতরে join-table অংশটি এভাবে পরিবর্তন করুন
+socket.on('join-table', async ({ tableID, username, role }) => {
+    socket.join(tableID);
+    
+    if (!tables[tableID]) {
+        tables[tableID] = {
+            players: [],
+            gameState: 'waiting',
+            betPool: 0,
+            deck: generateDeck() // ৩২টি কার্ডের ডেক জেনারেট করা
+        };
+    }
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-    maxHttpBufferSize: 1e6 // ১ মেগাবাইট লিমিট (ফাস্ট স্পিডের জন্য)
+    const table = tables[tableID];
+    
+    // অন্তত ১ জন আসল প্লেয়ার থাকলে বাকি ৩টি সিট বট দিয়ে পূরণ করা
+    if (table.players.length === 0) {
+        table.players.push({ id: socket.id, username, role: 'player', cards: [] });
+        table.players.push({ id: 'bot1', username: 'BOT 1', role: 'bot', cards: [] });
+        table.players.push({ id: 'bot2', username: 'BOT 2', role: 'bot', cards: [] });
+        table.players.push({ id: 'bot3', username: 'BOT 3', role: 'bot', cards: [] });
+        
+        // খেলা শুরু এবং কার্ড ডিস্ট্রিবিউশন
+        startDealing(tableID);
+    }
 });
 
-// ডাটাবেস কানেকশন (Render Environment থেকে MONGO_URI নিবে)
-mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/ultima29")
-    .then(() => console.log("Ultima 29 Engine: Connected to Database 🚀"))
-    .catch(err => console.error("Database Connection Error:", err));
-
-// --- Database Schemas ---
-const GameSchema = new mongoose.Schema({
-    tableID: String,
-    betPool: { type: Number, default: 0 },
-    history: Array,
-    createdAt: { type: Date, default: Date.now }
-});
-// ১৫ মিনিট (৯০০ সেকেন্ড) পর গেম ডাটা অটো ডিলিট হবে
-GameSchema.index({ createdAt: 1 }, { expireAfterSeconds: 900 });
-const Game = mongoose.model('Game', GameSchema);
-
-const UserSchema = new mongoose.Schema({
-    username: String,
-    coins: { type: Number, default: 5000 }
-});
-const User = mongoose.model('User', UserSchema);
-
-// --- Game Logic Globals ---
-const tables = {}; 
-
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
-});
-
-io.on('connection', (socket) => {
-    console.log('New User Connected:', socket.id);
-
-    // ১. টেবিল জয়েন করা
-    socket.on('join-table', async ({ tableID, username, role }) => {
-        socket.join(tableID);
-        socket.username = username;
-        socket.tableID = tableID;
-
-        if (!tables[tableID]) {
-            tables[tableID] = {
-                players: [],
-                spectators: [],
-                betPool: 0,
-                gameState: 'waiting'
-            };
-        }
-
-        const table = tables[tableID];
-
-        if (role === 'player' && table.players.length < 4) {
-            table.players.push({ id: socket.id, username, role });
-        } else {
-            table.spectators.push({ id: socket.id, username, role: 'spectator' });
-        }
-
-        io.to(tableID).emit('table-update', {
-            players: table.players,
-            spectators: table.spectators,
-            betPool: table.betPool
-        });
-    });
-
-    // ২. বেটিং লজিক (INR)
-    socket.on('place-bet', async ({ tableID, amount }) => {
-        if (tables[tableID]) {
-            tables[tableID].betPool += amount;
-            
-            // ডাটাবেসে আপডেট (১৫ মিনিটের জন্য থাকবে)
-            await Game.findOneAndUpdate(
-                { tableID },
-                { $inc: { betPool: amount } },
-                { upsert: true }
-            );
-
-            io.to(tableID).emit('bet-updated', tables[tableID].betPool);
+function startDealing(tableID) {
+    const table = tables[tableID];
+    const shuffledDeck = table.deck.sort(() => Math.random() - 0.5);
+    
+    table.players.forEach((player, index) => {
+        player.cards = shuffledDeck.slice(index * 8, (index + 1) * 8);
+        if (player.role === 'player') {
+            io.to(player.id).emit('deal-cards', player.cards);
         }
     });
-
-    // ৩. ফানি রিঅ্যাকশন
-    socket.on('send-reaction', ({ tableID, reaction }) => {
-        io.to(tableID).emit('new-reaction', {
-            sender: socket.username,
-            reaction: reaction
-        });
-    });
-
-    // ৪. ডিসকানেক্ট হ্যান্ডেল
-    socket.on('disconnect', () => {
-        const tID = socket.tableID;
-        if (tables[tID]) {
-            tables[tID].players = tables[tID].players.filter(p => p.id !== socket.id);
-            tables[tID].spectators = tables[tID].spectators.filter(s => s.id !== socket.id);
-            io.to(tID).emit('table-update', tables[tID]);
-        }
-    });
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`29 Card Game is LIVE on port ${PORT} 🚀`);
-});
-
+    table.gameState = 'playing';
+}
