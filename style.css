@@ -1,0 +1,27 @@
+:root { --gold: #ffd700; --felt: #074a1d; --border: #3d2b1f; }
+body { background: #020617; color: white; margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+
+/* Lobby & Auth */
+.auth-container { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1e1b4b, #020617); }
+input { padding: 15px; border-radius: 10px; border: none; margin: 10px; width: 250px; background: #111; color: white; }
+.btn-gold { padding: 15px 30px; background: var(--gold); border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+
+/* Table Setup */
+.casino-table { 
+    width: 90vw; height: 65vh; background: radial-gradient(circle, var(--felt) 40%, #042410);
+    border: 15px solid var(--border); border-radius: 200px; margin: 20px auto; position: relative;
+    box-shadow: 0 50px 100px rgba(0,0,0,0.8), inset 0 0 100px rgba(0,0,0,0.5);
+}
+
+/* Flying Animation */
+.gift-item { position: absolute; font-size: 50px; z-index: 1000; transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
+
+.p-slot { position: absolute; width: 100px; text-align: center; }
+.slot-0 { bottom: -50px; left: 50%; transform: translateX(-50%); }
+.slot-1 { left: -60px; top: 50%; transform: translateY(-50%); }
+.slot-2 { top: -60px; left: 50%; transform: translateX(-50%); }
+.slot-3 { right: -60px; top: 50%; transform: translateY(-50%); }
+
+.avatar { width: 65px; height: 65px; border: 3px solid var(--gold); border-radius: 20px; object-fit: cover; }
+.hidden { display: none !important; }
+
