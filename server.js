@@ -6,40 +6,48 @@ const io = require('socket.io')(server);
 const tables = {}; 
 app.use(express.static(__dirname));
 
+// ৩২টি কার্ডের ডেক জেনারেট করা
+function generateDeck() {
+    const suits = ['♠', '♥', '♣', '♦'];
+    const ranks = ['J', '9', 'A', '10', 'K', 'Q', '8', '7'];
+    let deck = [];
+    suits.forEach(s => ranks.forEach(r => deck.push({suit: s, rank: r})));
+    return deck;
+}
+
 io.on('connection', (socket) => {
-    // হোস্ট টেবিল এবং বট মোড সিলেকশন
     socket.on('host-table', ({ username, isBotMode }) => {
         const tableID = isBotMode ? "BOT-" + Math.random().toString(36).substring(7).toUpperCase() : Math.random().toString(36).substring(2, 8).toUpperCase();
         tables[tableID] = {
-            host: socket.id,
-            players: [{ id: socket.id, username, role: 'player', coins: 5000, micActive: false }],
+            players: [{ id: socket.id, username, role: 'player', cards: [] }],
             isBotMode: isBotMode,
-            betPool: 0
+            deck: generateDeck()
         };
-        // বট মোড হলে ৩টি বট অটোমেটিক যোগ হবে
+
         if(isBotMode) {
+            // ৩টি বট যোগ করা
             tables[tableID].players.push(
-                {id:'b1', username:'Bot_1', role:'bot', micActive: false}, 
-                {id:'b2', username:'Bot_2', role:'bot', micActive: false}, 
-                {id:'b3', username:'Bot_3', role:'bot', micActive: false}
+                {id:'b1', username:'Bot_1', role:'bot', cards: []},
+                {id:'b2', username:'Bot_2', role:'bot', cards: []},
+                {id:'b3', username:'Bot_3', role:'bot', cards: []}
             );
+            // বট মোডে সাথে সাথে কার্ড ভাগ করা শুরু হবে
+            setTimeout(() => { startDealing(tableID); }, 2000);
         }
         socket.join(tableID);
         socket.emit('table-created', tableID);
     });
 
-    // মাইক স্ট্যাটাস সিঙ্ক
-    socket.on('toggle-mic-stat', ({ tableID, isMuted }) => {
-        if(tables[tableID]) {
-            const player = tables[tableID].players.find(p => p.id === socket.id);
-            if(player) player.micActive = !isMuted;
-            io.to(tableID).emit('mic-status-update', { id: socket.id, micActive: !isMuted });
-        }
-    });
+    function startDealing(tableID) {
+        const table = tables[tableID];
+        const shuffled = table.deck.sort(() => Math.random() - 0.5);
+        table.players.forEach((p, i) => {
+            p.cards = shuffled.slice(i * 8, (i + 1) * 8);
+            if(p.role === 'player') io.to(p.id).emit('deal-cards', p.cards);
+        });
+    }
 
-    socket.on('voice-data', (data) => socket.to(data.tableID).emit('remote-audio', data));
     socket.on('send-reaction', (data) => io.to(data.tableID).emit('fly-gift', data));
 });
-
-server.listen(process.env.PORT || 3000, () => console.log('Rocket Engine Active! 🚀'));
+server.listen(process.env.PORT || 3000);
 
