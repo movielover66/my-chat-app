@@ -1,105 +1,56 @@
 const express = require('express');
-const http = require('http');
-const { Server } = require("socket.io");
-const mongoose = require('mongoose');
-
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
-// --- ২৯ গেমের ৩২টি কার্ড জেনারেট করার ফাংশন ---
-function generateDeck() {
-    const suits = ['♠', '♥', '♣', '♦'];
-    const ranks = [
-        { r: 'J', p: 3 }, { r: '9', p: 2 }, { r: 'A', p: 1 }, 
-        { r: '10', p: 1 }, { r: 'K', p: 0 }, { r: 'Q', p: 0 }, 
-        { r: '8', p: 0 }, { r: '7', p: 0 }
-    ];
-    let deck = [];
-    suits.forEach(s => {
-        ranks.forEach(rank => {
-            deck.push({ suit: s, rank: rank.r, point: rank.p });
-        });
-    });
-    return deck;
-}
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
 
 const tables = {}; 
 
+app.use(express.static(__dirname));
+
 io.on('connection', (socket) => {
-    // ১. টেবিল জয়েন করার লজিক (স্ক্রিনশট অনুযায়ী ফিক্সড)
-    socket.on('join-table', ({ tableID, username, role }) => {
+    // ১. হোস্ট টেবিল (Private ID জেনারেট)
+    socket.on('host-table', ({ username }) => {
+        const tableID = Math.random().toString(36).substring(2, 8).toUpperCase(); 
+        tables[tableID] = {
+            host: socket.id,
+            players: [{ id: socket.id, username, role: 'player', coins: 5000 }],
+            spectators: [],
+            betPool: 0
+        };
         socket.join(tableID);
-        socket.tableID = tableID;
-        socket.username = username;
-
-        if (!tables[tableID]) {
-            tables[tableID] = {
-                players: [],
-                gameState: 'waiting',
-                betPool: 0,
-                deck: generateDeck() 
-            };
-        }
-
-        const table = tables[tableID];
-
-        // অন্তত ১ জন আসল প্লেয়ার থাকলে বাকি ৩টি সিট বট দিয়ে পূরণ করুন
-        if (table.players.length === 0) {
-            table.players.push({ id: socket.id, username, role: 'player', cards: [] });
-            table.players.push({ id: 'bot1', username: 'BOT 1', role: 'bot', cards: [] });
-            table.players.push({ id: 'bot2', username: 'BOT 2', role: 'bot', cards: [] });
-            table.players.push({ id: 'bot3', username: 'BOT 3', role: 'bot', cards: [] });
-            
-            // খেলা শুরু এবং কার্ড ডিস্ট্রিবিউশন
-            setTimeout(() => {
-                startDealing(tableID);
-            }, 2000); // ২ সেকেন্ড পর কার্ড দিবে
-        }
-
-        io.to(tableID).emit('table-update', {
-            players: table.players,
-            spectators: [], // আপাতত দর্শক খালি
-            betPool: table.betPool
-        });
+        socket.emit('table-created', tableID);
+        console.log(`Table Created: ${tableID} by ${username}`);
     });
 
-    // ২. কার্ড ডিস্ট্রিবিউশন ফাংশন
-    function startDealing(tableID) {
+    // ২. জয়েন টেবিল (আইডি দিয়ে ঢোকা)
+    socket.on('join-private', ({ tableID, username, role }) => {
         const table = tables[tableID];
-        if(!table) return;
-
-        const shuffledDeck = table.deck.sort(() => Math.random() - 0.5);
+        if (!table) return socket.emit('error-msg', 'Invalid Code!');
         
-        table.players.forEach((player, index) => {
-            // ৩২টি কার্ড ৮টি করে ৪ জনকে ভাগ করে দেওয়া
-            player.cards = shuffledDeck.slice(index * 8, (index + 1) * 8);
-            
-            if (player.role === 'player') {
-                io.to(player.id).emit('deal-cards', player.cards);
-            }
-        });
-        table.gameState = 'playing';
-        console.log(`Dealing cards for table: ${tableID}`);
-    }
-
-    // ৩. বেটিং লজিক (₹ INR)
-    socket.on('place-bet', ({ tableID, amount }) => {
-        if (tables[tableID]) {
-            tables[tableID].betPool += amount;
-            io.to(tableID).emit('bet-updated', tables[tableID].betPool);
+        if (role === 'player' && table.players.length < 4) {
+            table.players.push({ id: socket.id, username, role, coins: 5000 });
+            socket.join(tableID);
+        } else {
+            table.spectators.push({ id: socket.id, username });
+            socket.join(tableID);
         }
+        io.to(tableID).emit('table-update', table);
     });
 
-    // ৪. রিঅ্যাকশন ও ইমোজি
-    socket.on('send-reaction', ({ tableID, reaction }) => {
-        io.to(tableID).emit('new-reaction', { reaction });
+    // ৩. উড়ে যাওয়া রিঅ্যাকশন (Sound & Animation)
+    socket.on('send-reaction', ({ tableID, gift, targetIdx }) => {
+        io.to(tableID).emit('fly-gift', { gift, targetIdx, fromId: socket.id });
+    });
+
+    // ৪. লাইভ ভয়েস (Mic Chat)
+    socket.on('voice-data', ({ tableID, audioBlob }) => {
+        socket.to(tableID).emit('remote-audio', { sender: socket.id, audioBlob });
     });
 
     socket.on('disconnect', () => {
-        // ডিসকানেক্ট হলে টেবিল ডাটা পরিষ্কার করার লজিক এখানে দিতে পারেন
+        // ডিসকানেক্ট হলে প্লেয়ার সরানোর লজিক
     });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Ultima 29 Engine Running on ${PORT} 🚀`));
+server.listen(process.env.PORT || 3000, () => console.log('Rocket Engine Running! 🚀'));
+
