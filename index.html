@@ -3,131 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultima 29 Pro Max - By PRITAM</title>
+    <title>Ultima 29 Pro - PRITAM</title>
     <script src="/socket.io/socket.io.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --gold: #ffcc00; --felt: #074a1d; --border: #3d2b1f; --inr: #10b981; }
+        :root { --gold: #ffcc00; --felt: #074a1d; --border: #3d2b1f; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: #020617; color: white; height: 100vh; overflow: hidden; }
+        body { background: #020617; color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         .hidden { display: none !important; }
         
-        /* Lobby */
-        #lobby-view { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1e1b4b, #020617); }
-        .auth-card { background: rgba(30, 41, 59, 0.9); padding: 40px; border-radius: 25px; width: 90%; max-width: 400px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
-        
-        /* Table Area */
-        #game-view { height: 100vh; display: flex; flex-direction: column; }
+        /* Table Layout */
         .casino-floor { flex: 1; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
         .table-29 { 
-            width: 95vw; height: 60vh; max-width: 800px; background: radial-gradient(circle, var(--felt) 50%, #042410);
+            width: 92vw; height: 60vh; max-width: 800px; background: radial-gradient(circle, var(--felt) 50%, #042410);
             border: 12px solid var(--border); border-radius: 180px; position: relative;
             box-shadow: 0 40px 80px rgba(0,0,0,0.8), inset 0 0 100px rgba(0,0,0,0.5);
             transform: rotateX(10deg);
         }
-                .player-slot { position: absolute; width: 80px; text-align: center; }
+
+        .player-slot { position: absolute; width: 85px; text-align: center; }
         .pos-bottom { bottom: -60px; left: 50%; transform: translateX(-50%); }
         .pos-top { top: -60px; left: 50%; transform: translateX(-50%); }
-        .pos-left { left: -70px; top: 50%; transform: translateY(-50%); }
-        .pos-right { right: -70px; top: 50%; transform: translateY(-50%); }
+        .pos-left { left: -75px; top: 50%; transform: translateY(-50%); }
+        .pos-right { right: -75px; top: 50%; transform: translateY(-50%); }
         
-        .pfp { width: 60px; height: 60px; border-radius: 15px; border: 3px solid var(--gold); background: #111; }
-        .p-name { font-size: 12px; font-weight: bold; color: var(--gold); margin-top: 5px; }
-
-        /* INR Chips */
-        .bet-dock { height: 100px; background: #000; display: flex; align-items: center; justify-content: center; gap: 15px; border-top: 2px solid var(--gold); }
-        .chip { width: 55px; height: 55px; border-radius: 50%; border: 3px dashed rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; font-weight: 900; cursor: pointer; font-size: 12px; }
-        .c-50 { background: #4caf50; } .c-100 { background: #e91e63; } .c-500 { background: #2196f3; } .c-5000 { background: var(--gold); color: black; }
-        
-        .pot-inr { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-size: 28px; color: var(--gold); font-weight: 900; }
-    </style>
-</head>
-<body>
-    <div id="lobby-view">
+        .pfp-img { width: 60px; height: 60px; border-radius: 15px; border: 3px solid var(--gold); background: #111; object-fit: cover; }
+        .p-name { font-size: 11px; font-weight: bold; color: var(--gold); margin-top: 5px; background: rgba(0,0,0,0.7); padding: 2px 5px; border-radius: 5px; }
+        <body>
+    <div id="lobby-view" style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background: radial-gradient(circle, #1e1b4b, #020617);">
         <h1 style="color: var(--gold); font-size: 3.5rem; margin-bottom: 20px;">ULTIMA 29</h1>
-        <div class="auth-card">
-            <input type="text" id="p-name-in" placeholder="Enter Name" style="width:100%; padding:15px; border-radius:12px; border:none; margin-bottom:20px; background:#111; color:white;">
-            <div style="display: flex; gap: 10px;">
-                <button onclick="enterGame('player')" style="flex:1; padding:15px; background:var(--gold); border:none; border-radius:12px; font-weight:900; cursor:pointer;">PLAY (INR)</button>
-                <button onclick="enterGame('spectator')" style="flex:1; padding:15px; background:#333; color:white; border:none; border-radius:12px; cursor:pointer;">WATCH</button>
-            </div>
-            <p style="margin-top:20px; font-size:10px; opacity:0.5;">DEV BY PRITAM</p>
+        <div style="background: rgba(30, 41, 59, 0.9); padding: 40px; border-radius: 25px; width: 90%; max-width: 380px; text-align: center;">
+            <input type="text" id="user-name-in" placeholder="Enter Rocket Pilot Name" style="width:100%; padding:15px; border-radius:12px; border:none; margin-bottom:20px; background:#111; color:white;">
+            <button onclick="launchGame()" style="width:100%; padding:18px; background:var(--gold); border:none; border-radius:12px; font-weight:900; cursor:pointer; font-size: 1.1rem;">PLAY NOW (INR)</button>
+            <p style="margin-top:20px; font-size:12px; opacity:0.6; font-weight: bold;">DEVELOPED BY PRITAM</p>
         </div>
     </div>
 
-    <div id="game-view" class="hidden">
+    <div id="game-view" class="hidden" style="flex:1; display:flex; flex-direction:column;">
         <div style="padding:15px; background:#000; border-bottom:1px solid var(--gold); display:flex; justify-content:space-between;">
-            <div style="color:var(--gold); font-weight:900;">WALLET: ₹<span id="wallet-amt">5000</span></div>
-            <div id="spec-info">Spectators: 0</div>
+            <div style="color:var(--gold); font-weight:900;">WALLET: ₹<span id="inr-wallet">5000</span></div>
+            <div id="spec-info" style="font-size: 11px; opacity: 0.7;">Spectators: 0</div>
         </div>
         <div class="casino-floor">
             <div class="table-29">
-                <div class="player-slot pos-bottom"><div class="pfp"></div><div class="p-name" id="name-0">You</div></div>
-                <div class="player-slot pos-left"><div class="pfp"></div><div class="p-name" id="name-1">Pilot 1</div></div>
-                <div class="player-slot pos-top"><div class="pfp"></div><div class="p-name" id="name-2">Pilot 2</div></div>
-                <div class="player-slot pos-right"><div class="pfp"></div><div class="p-name" id="name-3">Pilot 3</div></div>
-                <div class="pot-inr">₹<span id="pot-amt">0</span></div>
+                <div class="player-slot pos-bottom"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="pfp-img"><div class="p-name" id="name-0">You</div></div>
+                <div class="player-slot pos-left"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="pfp-img"><div class="p-name" id="name-1">BOT 1</div></div>
+                <div class="player-slot pos-top"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="pfp-img"><div class="p-name" id="name-2">BOT 2</div></div>
+                <div class="player-slot pos-right"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="pfp-img"><div class="p-name" id="name-3">BOT 3</div></div>
+                
+                <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center;">
+                    <span style="font-size:10px; opacity:0.5;">POT INR</span><br>
+                    <div style="font-size:28px; color:var(--gold); font-weight:900;">₹<span id="pot-inr">0</span></div>
+                </div>
             </div>
         </div>
-        <div class="bet-dock">
-            <div class="chip c-50" onclick="makeBet(50)">₹50</div>
-            <div class="chip c-100" onclick="makeBet(100)">₹100</div>
-            <div class="chip c-500" onclick="makeBet(500)">₹500</div>
-            <div class="chip c-5000" onclick="makeBet(5000)">₹5K</div>
+        
+        <div style="height:100px; background:#000; display:flex; align-items:center; justify-content:center; gap:15px; border-top:1px solid #333;">
+            <button onclick="placeBet(50)" style="background:#4caf50; padding:12px; border-radius:50%; border:none; font-weight:bold;">₹50</button>
+            <button onclick="placeBet(100)" style="background:#e91e63; padding:12px; border-radius:50%; border:none; font-weight:bold;">₹100</button>
+            <button onclick="placeBet(5000)" style="background:var(--gold); padding:12px; border-radius:50%; border:none; font-weight:bold; color:black;">₹5K</button>
         </div>
     </div>
-    <script>
+        <script>
     const socket = io();
     let wallet = 5000;
-    let myRole = 'player';
+    let myName = "";
 
-    function enterGame(role) {
-        const nameInput = document.getElementById('p-name-in').value.trim();
-        if(!nameInput) return alert("Name de age!");
-
-        myRole = role;
-        // Blank screen fix: Remove hidden, set display flex
+    function launchGame() {
+        const input = document.getElementById('user-name-in').value.trim();
+        if(!input) return alert("Identify yourself, Pilot!");
+        
+        myName = input;
         document.getElementById('lobby-view').classList.add('hidden');
         const gView = document.getElementById('game-view');
         gView.classList.remove('hidden');
         gView.style.display = 'flex';
 
+        // সার্ভারে কানেক্ট করা
         socket.emit('join-table', { 
             tableID: "ROCKET-01", 
-            username: nameInput, 
-            role: myRole, 
+            username: myName, 
+            role: 'player', 
             coins: wallet 
         });
     }
 
-    function makeBet(amt) {
-        if(myRole !== 'player') return alert("Tui spectator, bet korte parbi na!");
-        if(wallet < amt) return alert("Paisa nai!");
+    function placeBet(amt) {
+        if(wallet < amt) return alert("Insufficient INR balance!");
         wallet -= amt;
-        document.getElementById('wallet-amt').innerText = wallet;
+        document.getElementById('inr-wallet').innerText = wallet;
         socket.emit('place-bet', { tableID: "ROCKET-01", amount: amt });
     }
 
-    socket.on('bet-updated', (pot) => {
-        document.getElementById('pot-amt').innerText = pot;
-    });
-
+    // ৪ জন না হলে বট দিয়ে ফিল করার লজিক (Table Update)
     socket.on('table-update', (data) => {
         document.getElementById('spec-info').innerText = `Spectators: ${data.spectators.length}`;
+        
+        // প্লেয়ারদের নাম বসানো
         data.players.forEach((p, i) => {
-            if(document.getElementById(`name-${i}`)) {
-                document.getElementById(`name-${i}`).innerText = p.username;
-            }
+            const nameLabel = document.getElementById(`name-${i}`);
+            if(nameLabel) nameLabel.innerText = p.username;
         });
+
+        // যদি প্লেয়ার সংখ্যা ৪-এর কম হয়, বাকিগুলো BOT হিসেবেই থাকবে (UI-তে আগে থেকেই BOT নাম দেওয়া আছে)
     });
-    </script>
-    <script>
-    // 15 min auto-delete notification
-    console.log("System: Data cleanup every 15 mins active.");
-    
-    window.onbeforeunload = function() {
-        return "Game chere jabi?";
-    };
+
+    socket.on('bet-updated', (pot) => {
+        document.getElementById('pot-inr').innerText = pot;
+    });
+
+    // ১৫ মিনিট পর ডাটা ক্লিনিং কনসোল মেসেজ
+    console.log("Rocket System: Auto-delete 15m active for matches.");
 </script>
 </body>
 </html>
+        
