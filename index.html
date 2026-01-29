@@ -3,218 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultima Chat - By Pritam</title>
+    <title>Ultima 29 Pro - Developed by PRITAM</title>
     <script src="/socket.io/socket.io.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #7c3aed; --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --input: #334155; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-        .hidden { display: none !important; }
+        :root { 
+            --gold: #ffcc00; --felt: #0b4d22; --border: #5d4037; 
+            --chip-50: #4caf50; --chip-100: #e91e63; --chip-500: #2196f3; --chip-5000: #ff9800;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background: #0a0a0a; color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
-        /* Auth */
-        #auth-view { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1e1b4b, #0f172a); padding: 20px; }
-        .auth-card { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(10px); padding: 30px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        /* Table Layout */
+        .casino-floor { flex: 1; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
+        .table-29 { 
+            width: 95vw; height: 60vh; max-width: 800px; background: radial-gradient(circle, var(--felt) 50%, #052b13);
+            border: 12px solid var(--border); border-radius: 180px; position: relative;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.9), inset 0 0 100px rgba(0,0,0,0.5);
+            transform: rotateX(15deg);
+        }
+
+        /* Player Slots */
+        .slot { position: absolute; width: 100px; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        .slot-top { top: -60px; left: 50%; transform: translateX(-50%); }
+        .slot-bottom { bottom: -60px; left: 50%; transform: translateX(-50%); }
+        .slot-left { left: -60px; top: 50%; transform: translateY(-50%); }
+        .slot-right { right: -60px; top: 50%; transform: translateY(-50%); }
         
-        /* UI Elements */
-        input { width: 100%; padding: 14px; background: var(--input); border: none; border-radius: 10px; color: white; margin-bottom: 15px; outline: none; }
-        .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .pfp { width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--gold); background: #222; object-fit: cover; }
+        .p-name { font-size: 12px; font-weight: bold; margin-top: 5px; background: rgba(0,0,0,0.7); padding: 2px 8px; border-radius: 10px; }
+
+        /* Card Styles */
+        .card { width: 55px; height: 80px; background: white; border-radius: 6px; border: 1px solid #ccc; color: black; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; position: absolute; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        .card:hover { transform: translateY(-15px) rotate(5deg); z-index: 100; }
+        .card.red { color: #d32f2f; }
+        /* Betting Panel */
+        .bet-bar { height: 100px; background: #1a1a1a; display: flex; align-items: center; justify-content: center; gap: 15px; border-top: 2px solid var(--gold); }
+        .chip { width: 55px; height: 55px; border-radius: 50%; border: 4px dashed rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; cursor: pointer; transition: 0.2s; }
+        .chip:active { transform: scale(0.9); }
+        .chip-50 { background: var(--chip-50); }
+        .chip-100 { background: var(--chip-100); }
+        .chip-500 { background: var(--chip-500); }
+        .chip-5000 { background: var(--chip-5000); color: black; }
+
+        /* Reactions */
+        .reaction-panel { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; }
+        .react-btn { background: rgba(255,255,255,0.1); border: 1px solid var(--gold); color: white; padding: 10px; border-radius: 12px; cursor: pointer; font-size: 11px; }
+
+        /* Pot & Info */
+        .pot-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        .pot-amount { font-size: 24px; color: var(--gold); font-weight: bold; text-shadow: 0 0 10px rgba(255,204,0,0.5); }
         
-        /* Online/Offline Status */
-        .online-dot { width: 10px; height: 10px; background: #22c55e; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #22c55e; margin-right: 5px; }
-        .offline-text { color: #94a3b8; font-size: 11px; }
-
-        /* Messages & Ticks */
-        .msg { max-width: 75%; padding: 10px; border-radius: 15px; margin-bottom: 8px; position: relative; }
-        .msg-me { align-self: flex-end; background: #7c3aed; }
-        .msg-friend { align-self: flex-start; background: #334155; }
-        .tick { font-size: 10px; margin-left: 5px; color: #94a3b8; }
-        .tick.seen { color: #38bdf8; }
-
-        /* Voice Player */
-        .voice-player { display: flex; align-items: center; gap: 8px; padding: 5px; background: rgba(0,0,0,0.2); border-radius: 10px; cursor: pointer; }
-        .mic-active { color: #ef4444 !important; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
-
-        .footer-credit { position: fixed; bottom: 10px; width: 100%; text-align: center; color: #475569; font-size: 12px; font-weight: bold; }
-        @media(min-width: 768px) { body { max-width: 450px; margin: 0 auto; border: 1px solid #334155; } }
+        @keyframes floatEmoji { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-100px); } }
+        .emoji-fly { position: absolute; font-size: 40px; animation: floatEmoji 2s forwards; pointer-events: none; z-index: 1000; }
     </style>
 </head>
 <body>
-    <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2346/2346-preview.m4a"></audio>
-
-    <div id="auth-view">
-        <div class="auth-card">
-            <h1 style="color:#a78bfa; margin-bottom:10px;">⚡ Ultima</h1>
-            <input type="text" id="username" placeholder="Username">
-            <input type="password" id="password" placeholder="Password">
-            <button class="btn-primary" onclick="handleAuth()">Login / Register</button>
-            <p id="auth-err" style="color:#ef4444; font-size:12px; margin-top:10px;"></p>
-        </div>
-        <div class="footer-credit">Developed by PRITAM</div>
-    </div>
-
-    <div id="main-view" class="hidden" style="flex:1; display:flex; flex-direction:column;">
-        <div style="padding:15px; background:var(--card); display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:10px;" onclick="openProfileModal()">
-                <img id="my-dp" src="" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
-                <div><b id="my-name">...</b><br><small style="color:#2dd4bf;">● Online</small></div>
+    <div id="lobby-view" style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <h1 style="color: var(--gold); font-size: 3rem; margin-bottom: 20px;">ULTIMA 29</h1>
+        <div style="background: #1e293b; padding: 30px; border-radius: 20px; width: 350px; text-align: center;">
+            <input type="text" id="p-name" placeholder="Enter Your Name" style="width:100%; padding:15px; border-radius:10px; border:none; margin-bottom:15px;">
+            <div style="display: flex; gap: 10px;">
+                <button onclick="joinGame('player')" style="flex:1; padding:15px; background:var(--gold); border:none; border-radius:10px; font-weight:bold; cursor:pointer;">PLAY (PLAYER)</button>
+                <button onclick="joinGame('spectator')" style="flex:1; padding:15px; background:#475569; border:none; border-radius:10px; color:white; font-weight:bold; cursor:pointer;">WATCH</button>
             </div>
-            <button onclick="logout()" style="background:none; border:none; color:#ef4444;"><i class="fas fa-power-off"></i></button>
+            <p style="margin-top:20px; font-size:12px; opacity:0.6;">Developed by PRITAM</p>
         </div>
-        
-        <div style="padding:10px;"><input type="text" placeholder="Search friends..." oninput="searchUser(this.value)"></div>
-        <div id="friends-list" style="flex:1; overflow-y:auto; padding:10px;"></div>
-        <div class="footer-credit">Developed by PRITAM</div>
     </div>
 
-    <div id="chat-view" class="hidden" style="position:fixed; inset:0; background:var(--bg); z-index:100; flex-direction:column;">
-        <div style="padding:10px; background:var(--card); display:flex; align-items:center; gap:10px;">
-            <i class="fas fa-arrow-left" onclick="closeChat()"></i>
-            <div style="flex:1;">
-                <b id="chat-name">User</b><br>
-                <span id="chat-status" class="offline-text">Offline</span>
+    <div id="game-view" class="hidden" style="height: 100%; flex-direction: column;">
+        <div style="padding:15px; background:#111; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333;">
+            <div id="wallet">Balance: ₹<span id="coins">5000</span></div>
+            <div id="room-id">TABLE: ROCKET-01</div>
+            <div id="player-count">Spectators: 0</div>
+        </div>
+
+        <div class="casino-floor">
+            <div class="table-29">
+                <div class="slot slot-bottom" id="pos-0"><img src="" class="pfp"><span class="p-name">You</span></div>
+                <div class="slot slot-left" id="pos-1"><img src="" class="pfp"><span class="p-name">Pilot 1</span></div>
+                <div class="slot slot-top" id="pos-2"><img src="" class="pfp"><span class="p-name">Pilot 2</span></div>
+                <div class="slot slot-right" id="pos-3"><img src="" class="pfp"><span class="p-name">Pilot 3</span></div>
+
+                <div class="pot-box">
+                    <p style="font-size: 11px; opacity:0.6;">CURRENT POT</p>
+                    <div class="pot-amount">₹<span id="pot-val">0</span></div>
+                </div>
+
+                <div id="my-hand" style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); width:300px; height:80px; display:flex; justify-content:center;"></div>
+                <div id="trick-area" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:200px; height:150px;"></div>
             </div>
         </div>
-        <div id="chat-box" style="flex:1; padding:15px; overflow-y:auto; display:flex; flex-direction:column;"></div>
-        <div id="typing-ind" style="font-size:12px; color:#2dd4bf; padding-left:15px; visibility:hidden;">Typing...</div>
-        <div style="padding:10px; background:var(--card); display:flex; align-items:center; gap:10px;">
-            <i class="fas fa-microphone" id="voice-btn" style="font-size:20px; color:#94a3b8;" onclick="toggleVoice()"></i>
-            <input type="text" id="msg-input" placeholder="Message..." style="margin:0;" oninput="handleTyping()">
-            <i class="fas fa-paper-plane" style="color:var(--primary); font-size:22px;" onclick="sendMsg()"></i>
-        </div>
-    </div>
 
-    <div id="profile-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:200; align-items:center; justify-content:center; display:flex;">
-        <div class="auth-card">
-            <h3>Edit Profile</h3>
-            <img id="edit-preview" style="width:80px; height:80px; border-radius:50%; margin:15px auto; display:block;">
-            <input type="file" id="up-file" hidden onchange="previewMyDP(this)">
-            <button class="btn-primary" onclick="document.getElementById('up-file').click()">Select Photo</button>
-            <button class="btn-primary" style="margin-top:10px;" onclick="saveProfile()">Save</button>
-            <button onclick="document.getElementById('profile-modal').classList.add('hidden')" style="background:none; border:none; color:grey; margin-top:10px;">Close</button>
+        <div class="reaction-panel">
+            <button class="react-btn" onclick="react('🍚')">MURI BAJI</button>
+            <button class="react-btn" onclick="react('🍟')">CHOP BAJI</button>
+            <button class="react-btn" onclick="react('😂')">FUNNY</button>
+            <button class="react-btn" onclick="react('😠')">ANGRY</button>
+        </div>
+
+        <div class="bet-bar" id="betting-ui">
+            <div class="chip chip-50" onclick="bet(50)">50</div>
+            <div class="chip chip-100" onclick="bet(100)">100</div>
+            <div class="chip chip-500" onclick="bet(500)">500</div>
+            <div class="chip chip-5000" onclick="bet(5000)">5K</div>
         </div>
     </div>
 <script>
     const socket = io();
-    let me = JSON.parse(localStorage.getItem('ultima_user')) || null;
-    let currentRoom = null;
-    let onlineList = [];
-    let mediaRecorder, audioChunks = [];
+    let myCoins = 5000;
+    let role = 'player';
+    let myCards = [];
+    let tableID = "ROCKET-01";
 
-    window.onload = () => { if(me) { initApp(me); socket.emit('login', me); } };
+    const suits = ['♠', '♥', '♣', '♦'];
+    const ranks = [
+        { r: 'J', p: 3 }, { r: '9', p: 2 }, { r: 'A', p: 1 }, 
+        { r: '10', p: 1 }, { r: 'K', p: 0 }, { r: 'Q', p: 0 }, 
+        { r: '8', p: 0 }, { r: '7', p: 0 }
+    ];
 
-    function handleAuth() {
-        const u = document.getElementById('username').value.trim();
-        const p = document.getElementById('password').value.trim();
-        if(!u || !p) return;
-        socket.emit('register', { username: u, password: p });
-        socket.once('auth-error', (err) => {
-            if(err === 'Username taken!') socket.emit('login', { username: u, password: p });
-            else document.getElementById('auth-err').innerText = err;
-        });
+    function joinGame(selectedRole) {
+        const name = document.getElementById('p-name').value.trim();
+        if(!name) return alert("Enter Name!");
+        role = selectedRole;
+        
+        document.getElementById('lobby-view').classList.add('hidden');
+        document.getElementById('game-view').style.display = 'flex';
+        
+        socket.emit('join-table', { tableID, username: name, role, coins: myCoins });
     }
 
-    socket.on('auth-success', (user) => { 
-        me = user; localStorage.setItem('ultima_user', JSON.stringify(user)); initApp(user); 
+    function bet(amount) {
+        if(role !== 'player') return alert("Spectators can't bet!");
+        if(myCoins < amount) return alert("Not enough coins!");
+        
+        myCoins -= amount;
+        document.getElementById('coins').innerText = myCoins;
+        socket.emit('place-bet', { tableID, amount });
+    }
+
+    socket.on('bet-updated', (newPot) => {
+        document.getElementById('pot-val').innerText = newPot;
     });
 
-    function initApp(user) {
-        document.getElementById('auth-view').classList.add('hidden');
-        document.getElementById('main-view').classList.remove('hidden');
-        document.getElementById('my-name').innerText = user.username;
-        document.getElementById('my-dp').src = user.avatar || "https://cdn-icons-png.flaticon.com/512/149/149071.png";
-        socket.emit('join-user', user.username);
-        renderFriends(user.friends || []);
-    }
-
-    // --- Online Status Logic ---
-    socket.on('user-online-status', (list) => {
-        onlineList = list;
-        const status = document.getElementById('chat-status');
-        const activeChat = document.getElementById('chat-name').innerText;
-        if(onlineList.includes(activeChat)) {
-            status.innerHTML = `<span class="online-dot"></span> Online`;
-            document.getElementById('voice-btn').style.opacity = "1";
-        } else {
-            status.innerHTML = "Offline";
-            document.getElementById('voice-btn').style.opacity = "0.3";
-        }
-    });
-
-    // --- Voice Recording (Only if Online) ---
-    async function toggleVoice() {
-        if(!onlineList.includes(document.getElementById('chat-name').innerText)) {
-            return alert("Friend is offline! Voice messages only allowed when online.");
-        }
-        if(!mediaRecorder || mediaRecorder.state === "inactive") {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.start();
-            document.getElementById('voice-btn').classList.add('mic-active');
-            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(audioChunks, { type: 'audio/mp3' });
-                const reader = new FileReader();
-                reader.onloadend = () => socket.emit('private-message', { roomID: currentRoom, sender: me.username, voice: reader.result });
-                reader.readAsDataURL(blob);
-                audioChunks = [];
-            };
-        } else {
-            mediaRecorder.stop();
-            document.getElementById('voice-btn').classList.remove('mic-active');
-        }
-    }
-
-    // --- Message Logic with Ticks ---
-    function sendMsg() {
-        const text = document.getElementById('msg-input').value;
-        if(!text) return;
-        socket.emit('private-message', { roomID: currentRoom, sender: me.username, text });
-        document.getElementById('msg-input').value = '';
-    }
-
-    socket.on('receive-message', (msg) => {
-        const div = document.createElement('div');
-        div.className = `msg ${msg.sender === me.username ? 'msg-me' : 'msg-friend'}`;
-        
-        let content = msg.text || '';
-        if(msg.voice) content = `<div class="voice-player" onclick="new Audio('${msg.voice}').play()"><i class="fas fa-play"></i> Voice Message</div>`;
-        
-        const tick = msg.sender === me.username ? `<i class="fas fa-check tick ${msg.seen?'seen':''}"></i>` : '';
-        div.innerHTML = `${content} <br> <small style="font-size:9px; opacity:0.7">${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} ${tick}</small>`;
-        
-        document.getElementById('chat-box').appendChild(div);
-        document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight;
-        if(msg.sender !== me.username) document.getElementById('notif-sound').play();
-    });
-
-    function startChat(name) {
-        document.getElementById('chat-view').style.display = 'flex';
-        document.getElementById('chat-name').innerText = name;
-        document.getElementById('chat-box').innerHTML = '';
-        currentRoom = [me.username, name].sort().join('-');
-        socket.emit('join-chat', { roomID: currentRoom });
-    }
-
-    function closeChat() { document.getElementById('chat-view').style.display = 'none'; }
-    function logout() { localStorage.clear(); location.reload(); }
-    
-    // UI Helpers
-    function renderFriends(friends) {
-        const list = document.getElementById('friends-list');
-        list.innerHTML = friends.length ? '' : 'No friends yet.';
-        friends.forEach(f => {
+    // কার্ড রেন্ডারিং
+    function renderHand(cards) {
+        const hand = document.getElementById('my-hand');
+        hand.innerHTML = '';
+        cards.forEach((c, i) => {
             const div = document.createElement('div');
-            div.style = "padding:10px; background:var(--card); margin-bottom:5px; border-radius:10px;";
-            div.innerHTML = `<b>${f}</b>`;
-            div.onclick = () => startChat(f);
-            list.appendChild(div);
+            div.className = `card ${c.suit === '♥' || c.suit === '♦' ? 'red' : ''}`;
+            div.style.left = `${i * 35}px`;
+            div.innerHTML = `<span>${c.rank}</span><br><span>${c.suit}</span>`;
+            div.onclick = () => playCard(c);
+            hand.appendChild(div);
         });
     }
 </script>
+<script>
+    function react(type) {
+        socket.emit('send-reaction', { tableID, reaction: type });
+    }
+
+    socket.on('new-reaction', ({ sender, reaction }) => {
+        const emoji = document.createElement('div');
+        emoji.className = 'emoji-fly';
+        emoji.innerText = reaction;
+        
+        // র্যান্ডম পজিশন থেকে ইমোজি উড়বে
+        emoji.style.left = Math.random() * 80 + 10 + '%';
+        emoji.style.bottom = '100px';
+        
+        document.body.appendChild(emoji);
+        setTimeout(() => emoji.remove(), 2000);
+    });
+
+    // BOT AI লজিক (যদি ৪ জন প্লেয়ার না থাকে)
+    function botLogic() {
+        // বটের কাছে থাকা কার্ডগুলোর মধ্যে থেকে একটি র‍্যান্ডম কার্ড সিলেক্ট করা
+        // এবং নির্দিষ্ট সময়ে খেলা
+        console.log("Bot thinking...");
+    }
+
+    // টেবিল আপডেট (কতজন খেলছে বা দেখছে)
+    socket.on('table-update', (table) => {
+        document.getElementById('player-count').innerText = `Spectators: ${table.spectators.length}`;
+        // খেলোয়াড়দের প্রোফাইল ছবি আপডেট করা
+        table.players.forEach((p, i) => {
+            const slot = document.getElementById(`pos-${i}`);
+            if(slot) slot.querySelector('.p-name').innerText = p.username;
+        });
+    });
+
+    // ডাবল ট্যাপ করে লগ আউট বা রিফ্রেশ প্রোটেকশন
+    window.onbeforeunload = function() {
+        return "Are you sure you want to leave the table?";
+    };
+</script>
 </body>
 </html>
+
+
 
 
 
