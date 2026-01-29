@@ -3,186 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultima 29 Pro Max - Developed by PRITAM</title>
+    <title>Ultima 29 Pro Max - By PRITAM</title>
     <script src="/socket.io/socket.io.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { 
-            --gold: #ffcc00; --felt: #074a1d; --border: #3d2b1f; 
-            --inr-red: #e11d48; --inr-green: #10b981;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: #020617; color: #f8fafc; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        :root { --gold: #ffcc00; --felt: #074a1d; --border: #3d2b1f; --inr: #10b981; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: #020617; color: white; height: 100vh; overflow: hidden; }
         .hidden { display: none !important; }
         
-        /* Premium Casino Floor */
-        #lobby-view { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at top, #1e1b4b, #020617); }
-        .auth-card { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(15px); padding: 40px; border-radius: 28px; width: 95%; max-width: 400px; text-align: center; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
-        .logo-text { font-size: 3.5rem; font-weight: 900; background: linear-gradient(to right, var(--gold), #fff); -webkit-background-clip: text; color: transparent; margin-bottom: 10px; }
-
-        /* Table Design */
-        .table-area { flex: 1; display: flex; align-items: center; justify-content: center; perspective: 1200px; }
-        .casino-table { 
-            width: 95vw; height: 65vh; max-width: 900px; background: radial-gradient(circle, var(--felt) 45%, #042410);
-            border: 15px solid var(--border); border-radius: 200px; position: relative;
-            box-shadow: 0 50px 100px rgba(0,0,0,0.8), inset 0 0 120px rgba(0,0,0,0.6);
+        /* Lobby */
+        #lobby-view { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1e1b4b, #020617); }
+        .auth-card { background: rgba(30, 41, 59, 0.9); padding: 40px; border-radius: 25px; width: 90%; max-width: 400px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* Table Area */
+        #game-view { height: 100vh; display: flex; flex-direction: column; }
+        .casino-floor { flex: 1; display: flex; align-items: center; justify-content: center; perspective: 1000px; }
+        .table-29 { 
+            width: 95vw; height: 60vh; max-width: 800px; background: radial-gradient(circle, var(--felt) 50%, #042410);
+            border: 12px solid var(--border); border-radius: 180px; position: relative;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.8), inset 0 0 100px rgba(0,0,0,0.5);
             transform: rotateX(10deg);
         }
-
-        .player-slot { position: absolute; width: 100px; display: flex; flex-direction: column; align-items: center; z-index: 100; }
-        .slot-top { top: -65px; left: 50%; transform: translateX(-50%); }
-        .slot-bottom { bottom: -65px; left: 50%; transform: translateX(-50%); }
-        .slot-left { left: -75px; top: 50%; transform: translateY(-50%); }
-        .slot-right { right: -75px; top: 50%; transform: translateY(-50%); }
+                .player-slot { position: absolute; width: 80px; text-align: center; }
+        .pos-bottom { bottom: -60px; left: 50%; transform: translateX(-50%); }
+        .pos-top { top: -60px; left: 50%; transform: translateX(-50%); }
+        .pos-left { left: -70px; top: 50%; transform: translateY(-50%); }
+        .pos-right { right: -70px; top: 50%; transform: translateY(-50%); }
         
-        .avatar-img { width: 65px; height: 65px; border-radius: 20px; border: 3px solid var(--gold); background: #111; object-fit: cover; box-shadow: 0 0 15px var(--gold); }
-        .player-label { font-size: 13px; font-weight: 800; color: var(--gold); margin-top: 8px; text-shadow: 2px 2px 4px black; }
+        .pfp { width: 60px; height: 60px; border-radius: 15px; border: 3px solid var(--gold); background: #111; }
+        .p-name { font-size: 12px; font-weight: bold; color: var(--gold); margin-top: 5px; }
+
+        /* INR Chips */
+        .bet-dock { height: 100px; background: #000; display: flex; align-items: center; justify-content: center; gap: 15px; border-top: 2px solid var(--gold); }
+        .chip { width: 55px; height: 55px; border-radius: 50%; border: 3px dashed rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; font-weight: 900; cursor: pointer; font-size: 12px; }
+        .c-50 { background: #4caf50; } .c-100 { background: #e91e63; } .c-500 { background: #2196f3; } .c-5000 { background: var(--gold); color: black; }
+        
+        .pot-inr { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-size: 28px; color: var(--gold); font-weight: 900; }
     </style>
 </head>
-<style>
-        /* Card Graphics */
-        .card-29 { width: 58px; height: 85px; background: white; border-radius: 8px; color: black; position: absolute; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 5px 15px rgba(0,0,0,0.4); border: 1px solid #ccc; }
-        .card-29:hover { transform: translateY(-25px) scale(1.1); z-index: 500; border: 2px solid var(--gold); }
-        .suit-red { color: var(--inr-red); }
-
-        /* INR Betting Chips */
-        .inr-dock { height: 110px; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; gap: 15px; border-top: 2px solid var(--gold); }
-        .chip-inr { width: 65px; height: 65px; border-radius: 50%; border: 4px dashed rgba(255,255,255,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; cursor: pointer; transition: 0.2s; position: relative; }
-        .chip-inr span { font-size: 10px; opacity: 0.8; }
-        .chip-inr b { font-size: 16px; }
-        
-        .chip-50 { background: #4caf50; }
-        .chip-100 { background: #e91e63; }
-        .chip-500 { background: #2196f3; }
-        .chip-5000 { background: var(--gold); color: #000; }
-
-        /* Reaction Panel */
-        .side-panel { position: fixed; right: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; }
-        .btn-react { background: rgba(30, 41, 59, 0.7); border: 2px solid var(--gold); color: white; padding: 12px; border-radius: 15px; cursor: pointer; font-weight: bold; font-size: 11px; }
-
-        .pot-inr { font-size: 32px; color: var(--gold); font-weight: 900; letter-spacing: 2px; text-shadow: 0 0 20px rgba(255,204,0,0.5); }
-</style>
 <body>
-    <audio id="sound-chip" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.m4a"></audio>
-
     <div id="lobby-view">
-        <div class="logo-text">ULTIMA 29</div>
+        <h1 style="color: var(--gold); font-size: 3.5rem; margin-bottom: 20px;">ULTIMA 29</h1>
         <div class="auth-card">
-            <input type="text" id="pilot-id" placeholder="Enter Your Name" style="width:100%; padding:20px; border-radius:15px; border:none; background: #111; color: white; margin-bottom: 25px; font-size: 1rem; border: 1px solid #334155;">
-            <div style="display: flex; gap: 15px;">
-                <button id="play-btn" onclick="joinRocketRoom('player')" style="flex:1; padding:20px; background:var(--gold); border:none; border-radius:15px; font-weight:900; cursor:pointer; color:#000; font-size: 1.1rem;">PLAY (INR)</button>
-                <button onclick="joinRocketRoom('spectator')" style="flex:1; padding:20px; background:#334155; color:white; border:none; border-radius:15px; font-weight:bold; cursor:pointer;">WATCH</button>
+            <input type="text" id="p-name-in" placeholder="Enter Name" style="width:100%; padding:15px; border-radius:12px; border:none; margin-bottom:20px; background:#111; color:white;">
+            <div style="display: flex; gap: 10px;">
+                <button onclick="enterGame('player')" style="flex:1; padding:15px; background:var(--gold); border:none; border-radius:12px; font-weight:900; cursor:pointer;">PLAY (INR)</button>
+                <button onclick="enterGame('spectator')" style="flex:1; padding:15px; background:#333; color:white; border:none; border-radius:12px; cursor:pointer;">WATCH</button>
             </div>
-            <p style="margin-top:25px; font-size:12px; font-weight:bold; letter-spacing:2px; opacity: 0.6;">DEVELOPED BY PRITAM</p>
+            <p style="margin-top:20px; font-size:10px; opacity:0.5;">DEV BY PRITAM</p>
         </div>
     </div>
 
-    <div id="game-view" class="hidden" style="height: 100%; flex-direction: column;">
-        <div style="padding:15px 25px; background:#000; display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--gold);">
-            <div style="font-weight:900; color:var(--gold); font-size: 1.1rem;">WALLET: ₹<span id="wallet-inr">5000</span> (INR)</div>
-            <div id="spectator-stat" style="font-size: 12px; color: #94a3b8;">Spectators: 0</div>
+    <div id="game-view" class="hidden">
+        <div style="padding:15px; background:#000; border-bottom:1px solid var(--gold); display:flex; justify-content:space-between;">
+            <div style="color:var(--gold); font-weight:900;">WALLET: ₹<span id="wallet-amt">5000</span></div>
+            <div id="spec-info">Spectators: 0</div>
         </div>
-
-        <div class="table-area">
-            <div class="casino-table">
-                <div class="player-slot slot-bottom" id="slot-0"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar-img"><span class="player-label" id="name-0">You</span></div>
-                <div class="player-slot slot-left" id="slot-1"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar-img"><span class="player-label" id="name-1">Pilot 1</span></div>
-                <div class="player-slot slot-top" id="slot-2"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar-img"><span class="player-label" id="name-2">Pilot 2</span></div>
-                <div class="player-slot slot-right" id="slot-3"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar-img"><span class="player-label" id="name-3">Pilot 3</span></div>
-
-                <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); text-align:center;">
-                    <span style="font-size: 11px; font-weight: bold; opacity: 0.5;">POT IN INR</span><br>
-                    <div class="pot-inr">₹<span id="pot-amount">0</span></div>
-                </div>
-
-                <div id="cards-hand" style="position:absolute; bottom:30px; left:50%; transform:translateX(-50%); display:flex; justify-content:center; width: 100%;"></div>
+        <div class="casino-floor">
+            <div class="table-29">
+                <div class="player-slot pos-bottom"><div class="pfp"></div><div class="p-name" id="name-0">You</div></div>
+                <div class="player-slot pos-left"><div class="pfp"></div><div class="p-name" id="name-1">Pilot 1</div></div>
+                <div class="player-slot pos-top"><div class="pfp"></div><div class="p-name" id="name-2">Pilot 2</div></div>
+                <div class="player-slot pos-right"><div class="pfp"></div><div class="p-name" id="name-3">Pilot 3</div></div>
+                <div class="pot-inr">₹<span id="pot-amt">0</span></div>
             </div>
         </div>
-
-        <div class="side-panel">
-            <button class="btn-react" onclick="sendInrEmoji('🍚')">MURI BAJI</button>
-            <button class="btn-react" onclick="sendInrEmoji('🍟')">CHOP BAJI</button>
-            <button class="btn-react" onclick="sendInrEmoji('😂')">FUNNY</button>
-        </div>
-
-        <div class="inr-dock">
-            <div class="chip-inr chip-50" onclick="betInr(50)"><span>INR</span><b>50</b></div>
-            <div class="chip-inr chip-100" onclick="betInr(100)"><span>INR</span><b>100</b></div>
-            <div class="chip-inr chip-500" onclick="betInr(500)"><span>INR</span><b>500</b></div>
-            <div class="chip-inr chip-5000" onclick="betInr(5000)"><span>INR</span><b>5K</b></div>
+        <div class="bet-dock">
+            <div class="chip c-50" onclick="makeBet(50)">₹50</div>
+            <div class="chip c-100" onclick="makeBet(100)">₹100</div>
+            <div class="chip c-500" onclick="makeBet(500)">₹500</div>
+            <div class="chip c-5000" onclick="makeBet(5000)">₹5K</div>
         </div>
     </div>
     <script>
     const socket = io();
-    let walletInr = 5000;
+    let wallet = 5000;
     let myRole = 'player';
-    let pilotId = "";
-    let roomID = "ROCKET-PRITAM-01";
 
-    function joinRocketRoom(roleType) {
-        const input = document.getElementById('pilot-id').value.trim();
-        if(!input) return alert("Identify yourself, Pilot!");
-        
-        pilotId = input;
-        myRole = roleType;
-        
-        document.getElementById('sound-chip').play().catch(e=>{});
+    function enterGame(role) {
+        const nameInput = document.getElementById('p-name-in').value.trim();
+        if(!nameInput) return alert("Name de age!");
+
+        myRole = role;
+        // Blank screen fix: Remove hidden, set display flex
         document.getElementById('lobby-view').classList.add('hidden');
-        document.getElementById('game-view').style.display = 'flex';
-        
+        const gView = document.getElementById('game-view');
+        gView.classList.remove('hidden');
+        gView.style.display = 'flex';
+
         socket.emit('join-table', { 
-            tableID: roomID, 
-            username: pilotId, 
+            tableID: "ROCKET-01", 
+            username: nameInput, 
             role: myRole, 
-            coins: walletInr 
+            coins: wallet 
         });
     }
 
-    function betInr(amt) {
-        if(myRole !== 'player') return alert("Observers cannot bet!");
-        if(walletInr < amt) return alert("Not enough INR balance!");
-        
-        walletInr -= amt;
-        document.getElementById('wallet-inr').innerText = walletInr;
-        socket.emit('place-bet', { tableID: roomID, amount: amt });
-        document.getElementById('sound-chip').play();
+    function makeBet(amt) {
+        if(myRole !== 'player') return alert("Tui spectator, bet korte parbi na!");
+        if(wallet < amt) return alert("Paisa nai!");
+        wallet -= amt;
+        document.getElementById('wallet-amt').innerText = wallet;
+        socket.emit('place-bet', { tableID: "ROCKET-01", amount: amt });
     }
 
-    socket.on('bet-updated', (newPot) => {
-        document.getElementById('pot-amount').innerText = newPot;
+    socket.on('bet-updated', (pot) => {
+        document.getElementById('pot-amt').innerText = pot;
     });
 
     socket.on('table-update', (data) => {
-        document.getElementById('spectator-stat').innerText = `Spectators: ${data.spectators.length}`;
+        document.getElementById('spec-info').innerText = `Spectators: ${data.spectators.length}`;
         data.players.forEach((p, i) => {
-            const slot = document.getElementById(`name-${i}`);
-            if(slot) slot.innerText = p.username;
+            if(document.getElementById(`name-${i}`)) {
+                document.getElementById(`name-${i}`).innerText = p.username;
+            }
         });
     });
     </script>
     <script>
-    function sendInrEmoji(emoji) {
-        socket.emit('send-reaction', { tableID: roomID, reaction: emoji });
-    }
-
-    socket.on('new-reaction', ({ reaction }) => {
-        const div = document.createElement('div');
-        div.style.position = 'fixed';
-        div.style.fontSize = '50px';
-        div.style.zIndex = '2000';
-        div.innerText = reaction;
-        div.style.left = Math.random() * 80 + 10 + '%';
-        div.style.bottom = '120px';
-        div.style.animation = 'floatEmoji 2.5s forwards';
-        document.body.appendChild(div);
-        setTimeout(() => div.remove(), 2500);
-    });
-
-    // ১৫ মিনিট পর ইন-গেম ডাটা ক্লিনিং মেসেজ (সার্ভার সাইডে অটোমেটিক হবে)
-    console.log("Rocket System: Auto-delete 15m active for messages and history.");
+    // 15 min auto-delete notification
+    console.log("System: Data cleanup every 15 mins active.");
+    
+    window.onbeforeunload = function() {
+        return "Game chere jabi?";
+    };
 </script>
-<style>
-    @keyframes floatEmoji { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-150px); } }
-</style>
 </body>
 </html>
