@@ -4,93 +4,67 @@
 <body>
     <audio id="hit-sound" src="https://www.myinstants.com/media/sounds/punch.mp3"></audio>
 
-    <div id="lobby" class="auth-container">
+    <div id="lobby" style="text-align:center; padding-top:100px;">
         <h1 style="color:var(--gold); font-size: 3rem;">ULTIMA 29</h1>
-        <input type="text" id="user-name" placeholder="Enter Name">
-        <div style="display: flex;">
-            <button class="btn-gold" onclick="hostTable()">HOST TABLE</button>
-            <button class="btn-gold" style="background:#333; color:white; margin-left:10px;" onclick="showJoin()">JOIN PRIVATE</button>
-        </div>
-        <div id="join-box" class="hidden" style="margin-top:20px;">
-            <input type="text" id="join-code" placeholder="Enter 6-Digit Code">
-            <button class="btn-gold" onclick="joinTable()">JOIN NOW</button>
-        </div>
+        <input type="text" id="p-name" placeholder="Name" style="padding:15px; width:80%; border-radius:10px;">
+        <button onclick="host(false)" style="width:80%; padding:15px; background:var(--gold); margin-top:10px; border-radius:10px; font-weight:bold;">HOST PRIVATE</button>
+        <button onclick="host(true)" style="width:80%; padding:15px; background:#22c55e; color:white; margin-top:10px; border-radius:10px; font-weight:bold;">PLAY WITH BOT</button>
     </div>
 
     <div id="game" class="hidden">
         <div style="padding:15px; display:flex; justify-content:space-between;">
-            <div>TABLE ID: <b id="display-id" style="color:var(--gold)">...</b></div>
-            <div>WALLET: ₹<b id="wallet-amt">5000</b> (INR)</div>
+            <div id="t-id" style="color:var(--gold)">ID: ...</div>
+            <div>Wallet: ₹<b id="wallet-amt">5000</b> (INR)</div>
         </div>
-
-        <div class="casino-table" id="table-board">
-            <div class="p-slot slot-0" id="p-0" onclick="showReactMenu(0)"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar"><br><small>You</small></div>
-            <div class="p-slot slot-1" id="p-1" onclick="showReactMenu(1)"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar"><br><small>Pilot 1</small></div>
-            <div class="p-slot slot-2" id="p-2" onclick="showReactMenu(2)"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar"><br><small>Pilot 2</small></div>
-            <div class="p-slot slot-3" id="p-3" onclick="showReactMenu(3)"><img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar"><br><small>Pilot 3</small></div>
+        <div class="casino-table">
+            <div class="p-slot slot-0" id="p-0" onclick="setT(0)"><img id="img-0" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar"><br><small>You</small></div>
+            <div class="p-slot slot-1" id="p-1" onclick="setT(1)"><img id="img-1" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar"><br><small>Pilot 1</small></div>
+            <div class="p-slot slot-2" id="p-2" onclick="setT(2)"><img id="img-2" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar"><br><small>Pilot 2</small></div>
+            <div class="p-slot slot-3" id="p-3" onclick="setT(3)"><img id="img-3" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar"><br><small>Pilot 3</small></div>
         </div>
-
-        <div id="react-menu" class="hidden" style="position:fixed; bottom:120px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); padding:15px; border-radius:20px;">
-            <span style="font-size:30px; cursor:pointer;" onclick="fire('👞')">👞</span>
-            <span style="font-size:30px; cursor:pointer; margin:0 15px;" onclick="fire('🥚')">🥚</span>
-            <span style="font-size:30px; cursor:pointer;" onclick="fire('💩')">💩</span>
-            <span style="font-size:30px; cursor:pointer; margin-left:15px;" onclick="fire('🍆')">🍆</span>
-        </div>
-        
-        <button id="mic-btn" onclick="startMic()" style="position:fixed; bottom:20px; left:20px; border-radius:50%; width:60px; height:60px;">🎤</button>
+        <button id="mic-btn" onclick="toggleMic()" style="position:fixed; bottom:20px; left:20px; width:60px; height:60px; border-radius:50%; background:#444; color:white; border:none; font-size:24px;">🎤</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let curTable = "", targetIdx = null;
+        let curCode = "", isMuted = true, targetIdx = null;
 
-        function hostTable() {
-            const name = document.getElementById('user-name').value;
-            socket.emit('host-table', { username: name });
+        function host(isBot) {
+            const name = document.getElementById('p-name').value;
+            socket.emit('host-table', { username: name, isBotMode: isBot });
+            document.getElementById('lobby').classList.add('hidden');
+            document.getElementById('game').classList.remove('hidden');
         }
 
         socket.on('table-created', code => {
-            curTable = code;
-            document.getElementById('display-id').innerText = code;
-            document.getElementById('lobby').classList.add('hidden');
-            document.getElementById('game').classList.remove('hidden');
+            curCode = code; document.getElementById('t-id').innerText = "ID: "+code;
         });
 
-        // উড়ে যাওয়া রিঅ্যাকশন লজিক
-        function showReactMenu(idx) {
-            targetIdx = idx;
-            document.getElementById('react-menu').classList.toggle('hidden');
+        function toggleMic() {
+            isMuted = !isMuted;
+            document.getElementById('mic-btn').style.background = isMuted ? "#444" : "#ef4444";
+            socket.emit('toggle-mic-stat', { tableID: curCode, isMuted: isMuted });
+            // প্রোফাইল সিঙ্ক
+            document.getElementById('img-0').classList.toggle('mic-on', !isMuted);
         }
+
+        function setT(idx) { targetIdx = idx; /* রিঅ্যাকশন মেনু ওপেন হবে */ fire('👞'); }
 
         function fire(gift) {
-            socket.emit('send-reaction', { tableID: curTable, gift, targetIdx });
-            document.getElementById('react-menu').classList.add('hidden');
+            socket.emit('send-reaction', { tableID: curCode, gift, targetIdx });
         }
 
-        socket.on('fly-gift', ({ gift, targetIdx, fromId }) => {
+        socket.on('fly-gift', ({ gift, targetIdx }) => {
             document.getElementById('hit-sound').play();
             const emoji = document.createElement('div');
-            emoji.className = 'gift-item';
-            emoji.innerText = gift;
+            emoji.className = 'gift-item'; emoji.innerText = gift;
             document.body.appendChild(emoji);
-
             const target = document.getElementById(`p-${targetIdx}`).getBoundingClientRect();
-            emoji.style.left = '50%'; emoji.style.top = '80%'; // নিচ থেকে শুরু হবে
-
-            setTimeout(() => {
-                emoji.style.left = target.left + 'px';
-                emoji.style.top = target.top + 'px';
-            }, 50);
-
+            emoji.style.left = '50%'; emoji.style.top = '90%';
+            setTimeout(() => { emoji.style.left = target.left+'px'; emoji.style.top = target.top+'px'; }, 50);
             setTimeout(() => emoji.remove(), 1000);
         });
-
-        // ওয়ালেট সিঙ্ক (Refresh Protection)
-        window.onload = () => {
-            const bal = localStorage.getItem('inr_bal') || 5000;
-            document.getElementById('wallet-amt').innerText = bal;
-        };
     </script>
 </body>
 </html>
